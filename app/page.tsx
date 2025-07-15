@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useCallback, useMemo, useRef } from "react"
+import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,9 @@ import {
   CheckCircle,
   Play,
   StopCircle,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { RichTextEditor } from "./components/rich-text-editor"
@@ -110,6 +113,7 @@ export default function WhatsAppLinkGenerator() {
   const [fileError, setFileError] = useState<string>("")
   const [uploadPassword, setUploadPassword] = useState<string>("")
   const [passwordError, setPasswordError] = useState<string>("")
+  const [showPassword, setShowPassword] = useState<boolean>(false)
 
   // Manual number input states
   const [manualPhoneNumber, setManualPhoneNumber] = useState<string>("")
@@ -133,6 +137,13 @@ export default function WhatsAppLinkGenerator() {
     exportContacts,
     clearAllContacts,
   } = useContactStorage()
+
+  // Load saved contacts on component mount and when database changes
+  useEffect(() => {
+    if (database.contacts.length > 0 && contacts.length === 0) {
+      setContacts(database.contacts)
+    }
+  }, [database.contacts, contacts.length])
 
   const normalizePhoneNumber = (phone: string): string | null => {
     const cleaned = phone.replace(/\s+/g, "").replace(/[^\d+]/g, "")
@@ -460,6 +471,12 @@ export default function WhatsAppLinkGenerator() {
     }
   }
 
+  const loadSavedContacts = () => {
+    if (database.contacts.length > 0) {
+      setContacts(database.contacts)
+    }
+  }
+
   const copyToClipboard = async (text: string, index: number) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -622,8 +639,8 @@ export default function WhatsAppLinkGenerator() {
   }, [])
 
   return (
-    <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 py-8">
-      <div className="max-w-7xl mx-auto space-y-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -638,7 +655,7 @@ export default function WhatsAppLinkGenerator() {
             Upload Excel with Company Name, Category & Website columns. Generate personalized WhatsApp messages with
             smart templates and track your outreach.
           </p>
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center mt-4 gap-4">
             <Button
               onClick={() => window.open("/documentation", "_blank")}
               variant="outline"
@@ -648,6 +665,17 @@ export default function WhatsAppLinkGenerator() {
               <MessageCircle className="h-4 w-4 mr-2" />
               View Documentation
             </Button>
+            {database.totalContacts > 0 && (
+              <Button
+                onClick={loadSavedContacts}
+                variant="outline"
+                size="lg"
+                className="bg-white hover:bg-green-50 border-green-200 text-green-700"
+              >
+                <Building className="h-4 w-4 mr-2" />
+                Load Saved Contacts ({database.totalContacts})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -670,35 +698,78 @@ export default function WhatsAppLinkGenerator() {
           <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
             <CardTitle className="flex items-center gap-2 text-green-800">
               <Upload className="h-6 w-6" />
-              Upload Excel File with Business Data
+              Upload Excel/CSV File with Business Data
             </CardTitle>
             <CardDescription className="text-green-600">
               Excel/CSV columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size: 10MB
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Password Input */}
-            <div className="mb-4 space-y-2">
-              <Label htmlFor="upload-password">Upload Password</Label>
-              <Input
-                id="upload-password"
-                type="password"
-                value={uploadPassword}
-                onChange={(e) => {
-                  setUploadPassword(e.target.value)
-                  setPasswordError("") // Clear error on change
-                }}
-                placeholder="Enter password to enable upload"
-                className={passwordError ? "border-red-500" : ""}
-              />
-              {passwordError && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="h-4 w-4" />
-                  {passwordError}
-                </p>
-              )}
-              <p className="text-xs text-gray-500">Default password: `Pass123123`</p>
-            </div>
+            {/* Professional Password Input */}
+            <Card className="mb-6 border-amber-200 bg-amber-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-amber-800 text-lg">
+                  <Lock className="h-5 w-5" />
+                  Security Authentication
+                </CardTitle>
+                <CardDescription className="text-amber-700">
+                  Enter the upload password to access file upload functionality
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  <Label htmlFor="upload-password" className="text-sm font-medium text-amber-800">
+                    Upload Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="upload-password"
+                      type={showPassword ? "text" : "password"}
+                      value={uploadPassword}
+                      onChange={(e) => {
+                        setUploadPassword(e.target.value)
+                        setPasswordError("") // Clear error on change
+                      }}
+                      placeholder="Enter your upload password"
+                      className={`pr-10 ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-amber-600" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-amber-600" />
+                      )}
+                    </Button>
+                  </div>
+                  {passwordError && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{passwordError}</p>
+                    </div>
+                  )}
+                  {uploadPassword === UPLOAD_PASSWORD && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <p className="text-sm text-green-700">Password verified. You can now upload files.</p>
+                    </div>
+                  )}
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <p className="text-xs text-blue-700">
+                      <strong>Default Password:</strong> Pass123123
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      This security measure protects against unauthorized file uploads.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* File Size Error */}
             {fileError && (
@@ -729,7 +800,7 @@ export default function WhatsAppLinkGenerator() {
                   <Upload className="h-12 w-12 text-green-600" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xl font-semibold text-gray-700">Drag and drop your Excel file here</p>
+                  <p className="text-xl font-semibold text-gray-700">Drag and drop your Excel/CSV file here</p>
                   <p className="text-gray-500">or</p>
                   <Label htmlFor="file-upload">
                     <Button
@@ -879,7 +950,7 @@ export default function WhatsAppLinkGenerator() {
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center space-y-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-200 border-t-green-600 mx-auto"></div>
-                <p className="text-gray-600 text-lg">Processing Excel file...</p>
+                <p className="text-gray-600 text-lg">Processing file...</p>
                 <p className="text-gray-400 text-sm">Extracting business data and validating phone numbers</p>
               </div>
             </CardContent>
@@ -1086,7 +1157,7 @@ export default function WhatsAppLinkGenerator() {
           <CardContent className="text-blue-800 space-y-3">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <p className="font-semibold">📊 Excel Columns:</p>
+                <p className="font-semibold">📊 Excel/CSV Columns:</p>
                 <p className="text-sm">Phone, Company Name, Category, Website, and any custom columns you add!</p>
 
                 <p className="font-semibold">🏷️ Smart Categorization:</p>
