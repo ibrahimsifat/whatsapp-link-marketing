@@ -194,7 +194,7 @@ export default function WhatsAppLinkGenerator() {
     return true
   }
 
-  const processExcelFile = useCallback(
+  const processFile = useCallback(
     async (file: File) => {
       // Validate file size first
       if (!validateFileSize(file)) {
@@ -205,11 +205,40 @@ export default function WhatsAppLinkGenerator() {
       setFileError("")
 
       try {
-        const buffer = await file.arrayBuffer()
-        const workbook = XLSX.read(buffer, { type: "array" })
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+        let data: string[][] = []
+
+        if (file.name.endsWith(".csv")) {
+          // Process CSV file
+          const text = await file.text()
+          const lines = text.split("\n").filter((line) => line.trim())
+          data = lines.map((line) => {
+            // Handle CSV parsing with proper quote handling
+            const result: string[] = []
+            let current = ""
+            let inQuotes = false
+
+            for (let i = 0; i < line.length; i++) {
+              const char = line[i]
+              if (char === '"') {
+                inQuotes = !inQuotes
+              } else if (char === "," && !inQuotes) {
+                result.push(current.trim())
+                current = ""
+              } else {
+                current += char
+              }
+            }
+            result.push(current.trim())
+            return result
+          })
+        } else {
+          // Process Excel file
+          const buffer = await file.arrayBuffer()
+          const workbook = XLSX.read(buffer, { type: "array" })
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+        }
 
         const processedContacts: Contact[] = []
         const seenNumbers = new Set<string>()
@@ -328,7 +357,7 @@ export default function WhatsAppLinkGenerator() {
         setContacts(finalContacts)
       } catch (error) {
         console.error("Error processing file:", error)
-        setFileError("Error processing Excel file. Please ensure it's a valid .xlsx or .xls file.")
+        setFileError("Error processing file. Please ensure it's a valid .xlsx, .xls, or .csv file.")
       } finally {
         setIsLoading(false)
       }
@@ -360,14 +389,20 @@ export default function WhatsAppLinkGenerator() {
 
       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
         const file = e.dataTransfer.files[0]
-        if (file.type.includes("sheet") || file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-          processExcelFile(file)
+        if (
+          file.type.includes("sheet") ||
+          file.name.endsWith(".xlsx") ||
+          file.name.endsWith(".xls") ||
+          file.name.endsWith(".csv") ||
+          file.type === "text/csv"
+        ) {
+          processFile(file)
         } else {
-          setFileError("Please upload a valid Excel file (.xlsx or .xls)")
+          setFileError("Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)")
         }
       }
     },
-    [processExcelFile, uploadPassword],
+    [processFile, uploadPassword],
   )
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -380,10 +415,16 @@ export default function WhatsAppLinkGenerator() {
 
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      if (file.type.includes("sheet") || file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-        processExcelFile(file)
+      if (
+        file.type.includes("sheet") ||
+        file.name.endsWith(".xlsx") ||
+        file.name.endsWith(".xls") ||
+        file.name.endsWith(".csv") ||
+        file.type === "text/csv"
+      ) {
+        processFile(file)
       } else {
-        setFileError("Please upload a valid Excel file (.xlsx or .xls)")
+        setFileError("Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)")
       }
     }
   }
@@ -581,8 +622,8 @@ export default function WhatsAppLinkGenerator() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 py-8">
+      <div className="max-w-7xl mx-auto space-y-8 px-4">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -632,7 +673,7 @@ export default function WhatsAppLinkGenerator() {
               Upload Excel File with Business Data
             </CardTitle>
             <CardDescription className="text-green-600">
-              Excel columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size: 10MB
+              Excel/CSV columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size: 10MB
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -704,7 +745,7 @@ export default function WhatsAppLinkGenerator() {
                   <Input
                     id="file-upload"
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     onChange={handleFileChange}
                     className="hidden"
                     disabled={uploadPassword !== UPLOAD_PASSWORD}
@@ -712,7 +753,7 @@ export default function WhatsAppLinkGenerator() {
                 </div>
                 <div className="text-sm text-gray-500 space-y-1">
                   <p>Expected columns: Phone, Company Name, Category, Website, and any custom columns</p>
-                  <p>Supports: .xlsx, .xls files • Maximum size: 10MB</p>
+                  <p>Supports: .xlsx, .xls, .csv files • Maximum size: 10MB</p>
                 </div>
               </div>
             </div>
