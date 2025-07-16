@@ -128,46 +128,47 @@ export function MessageTemplates({
 
   return (
     <Card className="shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-        <div className="flex items-center justify-between">
+      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-purple-800">
-              <MessageSquare className="h-6 w-6" />
+            <CardTitle className="flex items-center gap-2 text-purple-800 text-lg sm:text-xl">
+              <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
               Message Templates
             </CardTitle>
-            <CardDescription className="text-purple-600">
+            <CardDescription className="text-purple-600 text-xs sm:text-sm">
               Pre-built templates with smart variables for different business scenarios
             </CardDescription>
           </div>
-          <Button onClick={() => setIsCreating(true)} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={() => setIsCreating(true)} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             New Template
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         {/* Create New Template */}
         {isCreating && (
-          <Card className="mb-6 border-2 border-purple-200">
-            <CardHeader className="bg-purple-50">
-              <CardTitle className="text-lg text-purple-800">Create New Template</CardTitle>
+          <Card className="mb-4 sm:mb-6 border-2 border-purple-200">
+            <CardHeader className="bg-purple-50 p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg text-purple-800">Create New Template</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Template Name</Label>
+                  <Label className="text-sm font-medium">Template Name</Label>
                   <Input
                     value={newTemplate.name || ""}
                     onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                     placeholder="e.g., Welcome New Clients"
+                    className="text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label className="text-sm font-medium">Category</Label>
                   <select
                     value={newTemplate.category || "Welcome"}
                     onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-3 py-2 border rounded-md bg-white text-sm"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -179,8 +180,8 @@ export function MessageTemplates({
               </div>
 
               <div className="space-y-2">
-                <Label>Target Audience</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Label className="text-sm font-medium">Target Audience</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {audienceOptions.map((option) => {
                     const Icon = option.icon
                     return (
@@ -189,10 +190,11 @@ export function MessageTemplates({
                         variant={newTemplate.targetAudience === option.value ? "default" : "outline"}
                         size="sm"
                         onClick={() => setNewTemplate({ ...newTemplate, targetAudience: option.value as any })}
-                        className="justify-start"
+                        className="justify-start text-xs sm:text-sm"
                       >
-                        <Icon className="h-4 w-4 mr-2" />
-                        {option.label}
+                        <Icon className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                        <span className="hidden sm:inline">{option.label}</span>
+                        <span className="sm:hidden">{option.label.split(" ")[0]}</span>
                       </Button>
                     )
                   })}
@@ -201,35 +203,36 @@ export function MessageTemplates({
 
               {newTemplate.targetAudience === "category_specific" && (
                 <div className="space-y-2">
-                  <Label>Specific Category</Label>
+                  <Label className="text-sm font-medium">Specific Category</Label>
                   <Input
                     value={newTemplate.specificCategory || ""}
                     onChange={(e) => setNewTemplate({ ...newTemplate, specificCategory: e.target.value })}
                     placeholder="e.g., Technology, Healthcare, Retail"
+                    className="text-sm"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>Message Content</Label>
+                <Label className="text-sm font-medium">Message Content</Label>
                 <Textarea
                   value={newTemplate.content || ""}
                   onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
                   placeholder="Use {companyName}, {companyCategory}, {website} for personalization"
                   rows={6}
-                  className="font-mono text-sm"
+                  className="font-mono text-xs sm:text-sm"
                 />
                 <div className="text-xs text-gray-500">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleCreateTemplate} className="bg-green-600 hover:bg-green-700">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={handleCreateTemplate} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                   <Save className="h-4 w-4 mr-2" />
                   Save Template
                 </Button>
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                <Button variant="outline" onClick={() => setIsCreating(false)} className="w-full sm:w-auto">
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -240,25 +243,26 @@ export function MessageTemplates({
 
         {/* Edit Template */}
         {editingTemplate && (
-          <Card className="mb-6 border-2 border-blue-200">
-            <CardHeader className="bg-blue-50">
-              <CardTitle className="text-lg text-blue-800">Edit Template</CardTitle>
+          <Card className="mb-4 sm:mb-6 border-2 border-blue-200">
+            <CardHeader className="bg-blue-50 p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg text-blue-800">Edit Template</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Template Name</Label>
+                  <Label className="text-sm font-medium">Template Name</Label>
                   <Input
                     value={editingTemplate.name}
                     onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                    className="text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label className="text-sm font-medium">Category</Label>
                   <select
                     value={editingTemplate.category}
                     onChange={(e) => setEditingTemplate({ ...editingTemplate, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-3 py-2 border rounded-md bg-white text-sm"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -270,24 +274,24 @@ export function MessageTemplates({
               </div>
 
               <div className="space-y-2">
-                <Label>Message Content</Label>
+                <Label className="text-sm font-medium">Message Content</Label>
                 <Textarea
                   value={editingTemplate.content}
                   onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
                   rows={6}
-                  className="font-mono text-sm"
+                  className="font-mono text-xs sm:text-sm"
                 />
                 <div className="text-xs text-gray-500">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleUpdateTemplate} className="bg-green-600 hover:bg-green-700">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={handleUpdateTemplate} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                   <Save className="h-4 w-4 mr-2" />
                   Update Template
                 </Button>
-                <Button variant="outline" onClick={() => setEditingTemplate(null)}>
+                <Button variant="outline" onClick={() => setEditingTemplate(null)} className="w-full sm:w-auto">
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
@@ -298,10 +302,10 @@ export function MessageTemplates({
 
         {/* Template Preview Modal */}
         {previewTemplate && (
-          <Card className="mb-6 border-2 border-green-200">
-            <CardHeader className="bg-green-50">
+          <Card className="mb-4 sm:mb-6 border-2 border-green-200">
+            <CardHeader className="bg-green-50 p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-green-800">Template Preview</CardTitle>
+                <CardTitle className="text-base sm:text-lg text-green-800">Template Preview</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(null)}>
                   <X className="h-4 w-4" />
                 </Button>
@@ -309,17 +313,20 @@ export function MessageTemplates({
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-4">
-                <div className="bg-white p-4 rounded-lg border">
-                  <h4 className="font-semibold mb-2">Sample Message:</h4>
-                  <div className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded">
+                <div className="bg-white p-3 sm:p-4 rounded-lg border">
+                  <h4 className="font-semibold mb-2 text-sm sm:text-base">Sample Message:</h4>
+                  <div className="whitespace-pre-wrap text-xs sm:text-sm bg-gray-50 p-3 rounded">
                     {previewWithSampleData(previewTemplate.content)}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => onTemplateSelect(previewTemplate)} className="bg-green-600 hover:bg-green-700">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={() => onTemplateSelect(previewTemplate)}
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                  >
                     Use This Template
                   </Button>
-                  <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+                  <Button variant="outline" onClick={() => setPreviewTemplate(null)} className="w-full sm:w-auto">
                     Close Preview
                   </Button>
                 </div>
@@ -329,7 +336,7 @@ export function MessageTemplates({
         )}
 
         {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {templates.map((template) => {
             const AudienceIcon = getAudienceIcon(template.targetAudience)
             const isSelected = selectedTemplate?.id === template.id
@@ -345,13 +352,13 @@ export function MessageTemplates({
                   <div className="space-y-3">
                     {/* Header */}
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{template.name}</h3>
                         <Badge variant="secondary" className="text-xs">
                           {template.category}
                         </Badge>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 ml-2">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -359,9 +366,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setPreviewTemplate(template)
                           }}
-                          className="h-8 w-8 p-0"
+                          className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -370,9 +377,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setEditingTemplate(template)
                           }}
-                          className="h-8 w-8 p-0"
+                          className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -381,17 +388,17 @@ export function MessageTemplates({
                             e.stopPropagation()
                             onTemplateDelete(template.id)
                           }}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </div>
 
                     {/* Target Audience */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <AudienceIcon className="h-4 w-4" />
-                      <span>{getAudienceLabel(template)}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                      <AudienceIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="truncate">{getAudienceLabel(template)}</span>
                     </div>
 
                     {/* Variables */}
@@ -399,22 +406,29 @@ export function MessageTemplates({
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-gray-500">Variables:</p>
                         <div className="flex flex-wrap gap-1">
-                          {template.variables.map((variable, index) => (
+                          {template.variables.slice(0, 3).map((variable, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                               {variable}
                             </Badge>
                           ))}
+                          {template.variables.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{template.variables.length - 3} more
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     )}
 
                     {/* Content Preview */}
-                    <div className="text-sm text-gray-600 line-clamp-3">{template.content.substring(0, 100)}...</div>
+                    <div className="text-xs sm:text-sm text-gray-600 line-clamp-3">
+                      {template.content.substring(0, 100)}...
+                    </div>
 
                     {/* Action Button */}
                     <Button
                       onClick={() => onTemplateSelect(template)}
-                      className={`w-full ${
+                      className={`w-full text-xs sm:text-sm ${
                         isSelected ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-600 hover:bg-gray-700"
                       }`}
                       size="sm"
@@ -430,8 +444,8 @@ export function MessageTemplates({
 
         {templates.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No templates created yet. Click "New Template" to get started.</p>
+            <MessageSquare className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-sm sm:text-base">No templates created yet. Click "New Template" to get started.</p>
           </div>
         )}
       </CardContent>

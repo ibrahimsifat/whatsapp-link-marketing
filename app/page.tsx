@@ -639,28 +639,28 @@ export default function WhatsAppLinkGenerator() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-2 sm:p-4">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 bg-green-600 rounded-full">
-              <MessageCircle className="h-8 w-8 text-white" />
+        <div className="text-center space-y-2 sm:space-y-4 px-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-green-600 rounded-full">
+              <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent text-center">
               WhatsApp Business Link Generator
             </h1>
           </div>
-          <p className="text-gray-600 text-xl max-w-2xl mx-auto">
+          <p className="text-gray-600 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto px-4">
             Upload Excel with Company Name, Category & Website columns. Generate personalized WhatsApp messages with
             smart templates and track your outreach.
           </p>
-          <div className="flex justify-center mt-4 gap-4">
+          <div className="flex flex-col sm:flex-row justify-center mt-4 gap-2 sm:gap-4 px-4">
             <Button
               onClick={() => window.open("/documentation", "_blank")}
               variant="outline"
               size="lg"
-              className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700"
+              className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700 w-full sm:w-auto"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               View Documentation
@@ -670,10 +670,11 @@ export default function WhatsAppLinkGenerator() {
                 onClick={loadSavedContacts}
                 variant="outline"
                 size="lg"
-                className="bg-white hover:bg-green-50 border-green-200 text-green-700"
+                className="bg-white hover:bg-green-50 border-green-200 text-green-700 w-full sm:w-auto"
               >
                 <Building className="h-4 w-4 mr-2" />
-                Load Saved Contacts ({database.totalContacts})
+                <span className="hidden sm:inline">Load Saved Contacts ({database.totalContacts})</span>
+                <span className="sm:hidden">Load Contacts ({database.totalContacts})</span>
               </Button>
             )}
           </div>
@@ -695,28 +696,28 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Upload Section */}
         <Card className="border-2 border-dashed border-gray-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Upload className="h-6 w-6" />
-              Upload Excel/CSV File with Business Data
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6">
+            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-green-800 text-lg sm:text-xl">
+              <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-sm sm:text-base">Upload Excel/CSV File with Business Data</span>
             </CardTitle>
-            <CardDescription className="text-green-600">
+            <CardDescription className="text-green-600 text-xs sm:text-sm">
               Excel/CSV columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size: 10MB
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             {/* Professional Password Input */}
-            <Card className="mb-6 border-amber-200 bg-amber-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-amber-800 text-lg">
-                  <Lock className="h-5 w-5" />
+            <Card className="mb-4 sm:mb-6 border-amber-200 bg-amber-50">
+              <CardHeader className="pb-3 p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-amber-800 text-base sm:text-lg">
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
                   Security Authentication
                 </CardTitle>
-                <CardDescription className="text-amber-700">
+                <CardDescription className="text-amber-700 text-xs sm:text-sm">
                   Enter the upload password to access file upload functionality
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 p-4 sm:p-6">
                 <div className="space-y-3">
                   <Label htmlFor="upload-password" className="text-sm font-medium text-amber-800">
                     Upload Password
@@ -731,7 +732,7 @@ export default function WhatsAppLinkGenerator() {
                         setPasswordError("") // Clear error on change
                       }}
                       placeholder="Enter your upload password"
-                      className={`pr-10 ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
+                      className={`pr-10 text-sm sm:text-base ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
                     />
                     <Button
                       type="button"
@@ -748,15 +749,15 @@ export default function WhatsAppLinkGenerator() {
                     </Button>
                   </div>
                   {passwordError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
-                      <p className="text-sm text-red-700">{passwordError}</p>
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm text-red-700">{passwordError}</p>
                     </div>
                   )}
                   {uploadPassword === UPLOAD_PASSWORD && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <p className="text-sm text-green-700">Password verified. You can now upload files.</p>
+                    <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm text-green-700">Password verified. You can now upload files.</p>
                     </div>
                   )}
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
@@ -773,19 +774,19 @@ export default function WhatsAppLinkGenerator() {
 
             {/* File Size Error */}
             {fileError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-red-800">Upload Error</h4>
-                    <p className="text-sm text-red-700 mt-1">{fileError}</p>
+                    <h4 className="font-semibold text-red-800 text-sm sm:text-base">Upload Error</h4>
+                    <p className="text-xs sm:text-sm text-red-700 mt-1">{fileError}</p>
                   </div>
                 </div>
               </div>
             )}
 
             <div
-              className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
+              className={`relative border-2 border-dashed rounded-xl p-6 sm:p-12 text-center transition-all duration-300 ${
                 dragActive
                   ? "border-green-400 bg-green-50 scale-105"
                   : "border-gray-300 hover:border-green-400 hover:bg-gray-50"
@@ -795,18 +796,21 @@ export default function WhatsAppLinkGenerator() {
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              <div className="space-y-4">
-                <div className="p-4 bg-green-100 rounded-full w-fit mx-auto">
-                  <Upload className="h-12 w-12 text-green-600" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="p-3 sm:p-4 bg-green-100 rounded-full w-fit mx-auto">
+                  <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-green-600" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xl font-semibold text-gray-700">Drag and drop your Excel/CSV file here</p>
-                  <p className="text-gray-500">or</p>
+                  <p className="text-base sm:text-xl font-semibold text-gray-700">
+                    <span className="hidden sm:inline">Drag and drop your Excel/CSV file here</span>
+                    <span className="sm:hidden">Upload your Excel/CSV file</span>
+                  </p>
+                  <p className="text-gray-500 text-sm">or</p>
                   <Label htmlFor="file-upload">
                     <Button
                       size="lg"
                       variant="outline"
-                      className="cursor-pointer bg-white hover:bg-green-50 border-green-200"
+                      className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
                       disabled={uploadPassword !== UPLOAD_PASSWORD}
                     >
                       <Upload className="h-4 w-4 mr-2" />
@@ -822,7 +826,7 @@ export default function WhatsAppLinkGenerator() {
                     disabled={uploadPassword !== UPLOAD_PASSWORD}
                   />
                 </div>
-                <div className="text-sm text-gray-500 space-y-1">
+                <div className="text-xs sm:text-sm text-gray-500 space-y-1">
                   <p>Expected columns: Phone, Company Name, Category, Website, and any custom columns</p>
                   <p>Supports: .xlsx, .xls, .csv files • Maximum size: 10MB</p>
                 </div>
@@ -833,18 +837,20 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Manual Number Entry Section */}
         <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
-            <CardTitle className="flex items-center gap-2 text-cyan-800">
-              <Phone className="h-6 w-6" />
+          <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-cyan-800 text-lg sm:text-xl">
+              <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
               Manual Number Entry
             </CardTitle>
-            <CardDescription className="text-cyan-600">
+            <CardDescription className="text-cyan-600 text-xs sm:text-sm">
               Generate a WhatsApp link for a single phone number
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="manual-phone">Phone Number</Label>
+              <Label htmlFor="manual-phone" className="text-sm font-medium">
+                Phone Number
+              </Label>
               <Input
                 id="manual-phone"
                 type="tel"
@@ -855,41 +861,45 @@ export default function WhatsAppLinkGenerator() {
                   setManualLink("") // Clear link when phone number changes
                 }}
                 placeholder="e.g., 0551234567 or +966551234567"
-                className={manualPhoneError ? "border-red-500" : ""}
+                className={`text-sm sm:text-base ${manualPhoneError ? "border-red-500" : ""}`}
               />
               {manualPhoneError && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="h-4 w-4" />
+                <p className="text-xs sm:text-sm text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
                   {manualPhoneError}
                 </p>
               )}
             </div>
-            <Button onClick={handleGenerateManualLink} className="bg-cyan-600 hover:bg-cyan-700">
+            <Button onClick={handleGenerateManualLink} className="bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto">
               <Send className="h-4 w-4 mr-2" />
               Generate Link
             </Button>
 
             {manualLink && (
               <div className="space-y-2 mt-4">
-                <Label>Generated WhatsApp Link</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={manualLink} readOnly className="flex-1" />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyManualLink}
-                    className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent"
-                  >
-                    {manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(manualLink, "_blank")}
-                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                <Label className="text-sm font-medium">Generated WhatsApp Link</Label>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <Input value={manualLink} readOnly className="flex-1 text-xs sm:text-sm" />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyManualLink}
+                      className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent flex-1 sm:flex-none"
+                    >
+                      {manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      <span className="ml-2 sm:hidden">Copy</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(manualLink, "_blank")}
+                      className="border-blue-200 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="ml-2 sm:hidden">Open</span>
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500">This link uses the current message from the editor below.</p>
               </div>
@@ -917,26 +927,26 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Rich Text Editor Section */}
         <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <MessageCircle className="h-6 w-6" />
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-blue-800 text-lg sm:text-xl">
+              <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
               Custom Message Editor
             </CardTitle>
-            <CardDescription className="text-blue-600">
+            <CardDescription className="text-blue-600 text-xs sm:text-sm">
               Create personalized messages with variables: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}
               {availableCustomVariables.length > 0 && (
                 <span>, and your custom variables: {availableCustomVariables.map((v) => `{${v}}`).join(", ")}</span>
               )}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             <RichTextEditor
               value={customMessage}
               onChange={setCustomMessage}
               placeholder="Type your message here... Use {companyName}, {companyCategory}, {website} for personalization"
             />
             {contacts.length > 0 && (
-              <Button onClick={() => updateWhatsAppLinks()} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => updateWhatsAppLinks()} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
                 Update WhatsApp Links
               </Button>
@@ -947,11 +957,13 @@ export default function WhatsAppLinkGenerator() {
         {/* Loading State */}
         {isLoading && (
           <Card className="shadow-lg">
-            <CardContent className="flex items-center justify-center py-12">
+            <CardContent className="flex items-center justify-center py-8 sm:py-12">
               <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-200 border-t-green-600 mx-auto"></div>
-                <p className="text-gray-600 text-lg">Processing file...</p>
-                <p className="text-gray-400 text-sm">Extracting business data and validating phone numbers</p>
+                <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-4 border-green-200 border-t-green-600 mx-auto"></div>
+                <p className="text-gray-600 text-base sm:text-lg">Processing file...</p>
+                <p className="text-gray-400 text-xs sm:text-sm">
+                  Extracting business data and validating phone numbers
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -960,53 +972,53 @@ export default function WhatsAppLinkGenerator() {
         {/* Statistics and Filters */}
         {contacts.length > 0 && (
           <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-              <CardTitle className="flex items-center gap-2 text-purple-800">
-                <Users className="h-6 w-6" />
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-purple-800 text-lg sm:text-xl">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                 Business Contacts Overview
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600">{websiteStats.total}</div>
-                  <div className="text-sm text-blue-500">Total Contacts</div>
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{websiteStats.total}</div>
+                  <div className="text-xs sm:text-sm text-blue-500">Total Contacts</div>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">{websiteStats.withWebsite}</div>
-                  <div className="text-sm text-green-500">With Website</div>
+                <div className="bg-green-50 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">{websiteStats.withWebsite}</div>
+                  <div className="text-xs sm:text-sm text-green-500">With Website</div>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-orange-600">{websiteStats.noWebsite}</div>
-                  <div className="text-sm text-orange-500">No Website</div>
+                <div className="bg-orange-50 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-orange-600">{websiteStats.noWebsite}</div>
+                  <div className="text-xs sm:text-sm text-orange-500">No Website</div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600">{categories.length}</div>
-                  <div className="text-sm text-purple-500">Categories</div>
+                <div className="bg-purple-50 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-purple-600">{categories.length}</div>
+                  <div className="text-xs sm:text-sm text-purple-500">Categories</div>
                 </div>
               </div>
 
               {/* Search and Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Search Contacts</Label>
+                  <Label className="text-xs sm:text-sm font-medium">Search Contacts</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search by name, category, phone..."
-                      className="pl-10"
+                      className="pl-8 sm:pl-10 text-xs sm:text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filter by Category</Label>
+                  <Label className="text-xs sm:text-sm font-medium">Filter by Category</Label>
                   <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Categories</option>
                     {categories.map((category) => (
@@ -1018,11 +1030,11 @@ export default function WhatsAppLinkGenerator() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filter by Website</Label>
+                  <Label className="text-xs sm:text-sm font-medium">Filter by Website</Label>
                   <select
                     value={filterWebsite}
                     onChange={(e) => setFilterWebsite(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Contacts</option>
                     <option value="with_website">With Website</option>
@@ -1031,11 +1043,11 @@ export default function WhatsAppLinkGenerator() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filter by Status</Label>
+                  <Label className="text-xs sm:text-sm font-medium">Filter by Status</Label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -1045,7 +1057,7 @@ export default function WhatsAppLinkGenerator() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-gray-600 gap-2">
                 <span>
                   {"Showing "}
                   {filteredContacts.length}
@@ -1060,36 +1072,45 @@ export default function WhatsAppLinkGenerator() {
 
               {/* Batch Send Button */}
               {filteredContacts.length > 0 && (
-                <div className="mt-6 text-center">
+                <div className="mt-4 sm:mt-6 text-center">
                   {isBatchSending ? (
-                    <Button onClick={stopBatchSend} className="bg-red-600 hover:bg-red-700" size="lg">
-                      <StopCircle className="h-5 w-5 mr-2" />
-                      Stop Sending ({currentBatchIndex}/{filteredContacts.length})
+                    <Button onClick={stopBatchSend} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto" size="lg">
+                      <StopCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      <span className="hidden sm:inline">
+                        Stop Sending ({currentBatchIndex}/{filteredContacts.length})
+                      </span>
+                      <span className="sm:hidden">
+                        Stop ({currentBatchIndex}/{filteredContacts.length})
+                      </span>
                     </Button>
                   ) : (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           disabled={filteredContacts.length === 0}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                           size="lg"
                         >
-                          <Play className="h-5 w-5 mr-2" />
-                          Send All Filtered ({filteredContacts.length})
+                          <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                          <span className="hidden sm:inline">Send All Filtered ({filteredContacts.length})</span>
+                          <span className="sm:hidden">Send All ({filteredContacts.length})</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="mx-4 max-w-md sm:max-w-lg">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Confirm Batch Send</AlertDialogTitle>
-                          <AlertDialogDescription>
+                          <AlertDialogTitle className="text-base sm:text-lg">Confirm Batch Send</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs sm:text-sm">
                             This will open {filteredContacts.length} WhatsApp chats in new tabs, one by one, with a
                             small delay. **Please ensure your browser allows pop-ups for this site, otherwise, the chats
                             will not open.**
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={startBatchSend} className="bg-green-600 hover:bg-green-700">
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={startBatchSend}
+                            className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                          >
                             Start Sending
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -1105,29 +1126,29 @@ export default function WhatsAppLinkGenerator() {
         {/* Results Section - Contact Cards */}
         {filteredContacts.length > 0 && (
           <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
-              <div className="flex flex-row items-center justify-between">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center gap-2 text-green-800">
-                    <Building className="h-6 w-6" />
+                  <CardTitle className="flex items-center gap-2 text-green-800 text-lg sm:text-xl">
+                    <Building className="h-5 w-5 sm:h-6 sm:w-6" />
                     Business WhatsApp Links
                   </CardTitle>
-                  <CardDescription className="text-green-600">
+                  <CardDescription className="text-green-600 text-xs sm:text-sm">
                     {filteredContacts.length} business contacts ready for messaging
                   </CardDescription>
                 </div>
                 <Button
                   variant="outline"
                   onClick={clearAll}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 bg-transparent"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 bg-transparent w-full sm:w-auto"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Clear All
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filteredContacts.map((contact, index) => (
                   <ContactCard
                     key={contact.id}
@@ -1148,30 +1169,32 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Instructions */}
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-blue-900 flex items-center gap-2 text-base sm:text-lg">
+              <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
               How to use Business Templates
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-blue-800 space-y-3">
-            <div className="grid md:grid-cols-2 gap-4">
+          <CardContent className="text-blue-800 space-y-3 p-4 sm:p-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <p className="font-semibold">📊 Excel/CSV Columns:</p>
-                <p className="text-sm">Phone, Company Name, Category, Website, and any custom columns you add!</p>
+                <p className="font-semibold text-sm sm:text-base">📊 Excel/CSV Columns:</p>
+                <p className="text-xs sm:text-sm">
+                  Phone, Company Name, Category, Website, and any custom columns you add!
+                </p>
 
-                <p className="font-semibold">🏷️ Smart Categorization:</p>
-                <p className="text-sm">Auto-categorizes "No Website" companies</p>
+                <p className="font-semibold text-sm sm:text-base">🏷️ Smart Categorization:</p>
+                <p className="text-xs sm:text-sm">Auto-categorizes "No Website" companies</p>
               </div>
               <div className="space-y-2">
-                <p className="font-semibold">📝 Template Variables:</p>
-                <p className="text-sm">
+                <p className="font-semibold text-sm sm:text-base">📝 Template Variables:</p>
+                <p className="text-xs sm:text-sm">
                   {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, and your custom column headers like
                   {"{contactPerson}"}
                 </p>
 
-                <p className="font-semibold">🎯 Targeted Messaging:</p>
-                <p className="text-sm">Different templates for companies with/without websites</p>
+                <p className="font-semibold text-sm sm:text-base">🎯 Targeted Messaging:</p>
+                <p className="text-xs sm:text-sm">Different templates for companies with/without websites</p>
               </div>
             </div>
           </CardContent>
