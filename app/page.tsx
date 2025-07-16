@@ -806,17 +806,21 @@ export default function WhatsAppLinkGenerator() {
                     <span className="sm:hidden">Upload your Excel/CSV file</span>
                   </p>
                   <p className="text-gray-500 text-sm">or</p>
-                  <Label htmlFor="file-upload">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
-                      disabled={uploadPassword !== UPLOAD_PASSWORD}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Choose File
-                    </Button>
-                  </Label>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
+                    disabled={uploadPassword !== UPLOAD_PASSWORD}
+                    onClick={() => {
+                      const fileInput = document.getElementById("file-upload") as HTMLInputElement
+                      if (fileInput) {
+                        fileInput.click()
+                      }
+                    }}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose File
+                  </Button>
                   <Input
                     id="file-upload"
                     type="file"
