@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Upload,
   MessageCircle,
@@ -25,12 +26,15 @@ import {
   Lock,
   Eye,
   EyeOff,
+  FileSpreadsheet,
+  Plus,
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { RichTextEditor } from "./components/rich-text-editor"
 import { MessageTemplates } from "./components/message-templates"
 import { ContactManagement } from "./components/contact-management"
 import { ContactCard } from "./components/contact-card"
+import { GoogleSheetsImport } from "./components/google-sheets-import"
 import { useContactStorage } from "./hooks/use-contact-storage"
 import type { Contact, MessageTemplate } from "./types/contact"
 import {
@@ -44,6 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
 
 const defaultTemplates: MessageTemplate[] = [
   {
@@ -366,9 +371,11 @@ export default function WhatsAppLinkGenerator() {
         }))
 
         setContacts(finalContacts)
+        toast.success(`Successfully processed ${finalContacts.length} contacts from ${file.name}`)
       } catch (error) {
         console.error("Error processing file:", error)
         setFileError("Error processing file. Please ensure it's a valid .xlsx, .xls, or .csv file.")
+        toast.error("Failed to process file")
       } finally {
         setIsLoading(false)
       }
@@ -474,6 +481,7 @@ export default function WhatsAppLinkGenerator() {
   const loadSavedContacts = () => {
     if (database.contacts.length > 0) {
       setContacts(database.contacts)
+      toast.success(`Loaded ${database.contacts.length} saved contacts`)
     }
   }
 
@@ -482,8 +490,10 @@ export default function WhatsAppLinkGenerator() {
       await navigator.clipboard.writeText(text)
       setCopiedIndex(index)
       setTimeout(() => setCopiedIndex(null), 2000)
+      toast.success("Link copied to clipboard!")
     } catch (err) {
       console.error("Failed to copy text: ", err)
+      toast.error("Failed to copy link")
     }
   }
 
@@ -509,6 +519,9 @@ export default function WhatsAppLinkGenerator() {
       // Remove from current contacts if it exists there
       const updatedCurrentContacts = contacts.filter((c) => c.id !== contactId)
       setContacts(updatedCurrentContacts)
+      toast.success("Contact deleted successfully")
+    } else {
+      toast.error("Failed to delete contact")
     }
   }
 
@@ -528,6 +541,7 @@ export default function WhatsAppLinkGenerator() {
     }
     const link = generateWhatsAppLink(normalizedPhone, customMessage)
     setManualLink(link)
+    toast.success("WhatsApp link generated!")
   }
 
   const handleCopyManualLink = async () => {
@@ -536,9 +550,37 @@ export default function WhatsAppLinkGenerator() {
         await navigator.clipboard.writeText(manualLink)
         setManualLinkCopied(true)
         setTimeout(() => setManualLinkCopied(false), 2000)
+        toast.success("Link copied to clipboard!")
       } catch (err) {
         console.error("Failed to copy manual link: ", err)
+        toast.error("Failed to copy link")
       }
+    }
+  }
+
+  const handleImportContacts = (newContacts: Contact[]) => {
+    // Merge with existing contacts, avoiding duplicates
+    const existingNumbers = new Set(contacts.map((c) => c.normalized))
+    const uniqueNewContacts = newContacts.filter((contact) => !existingNumbers.has(contact.normalized))
+
+    if (uniqueNewContacts.length > 0) {
+      const updatedContacts = [...contacts, ...uniqueNewContacts]
+      setContacts(updatedContacts)
+
+      // Update WhatsApp links with current message
+      const finalContacts = updatedContacts.map((contact) => ({
+        ...contact,
+        whatsappLink: generateWhatsAppLink(contact.normalized, replaceVariables(customMessage, contact)),
+      }))
+      setContacts(finalContacts)
+    }
+  }
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    if (type === "success") {
+      toast.success(message)
+    } else {
+      toast.error(message)
     }
   }
 
@@ -595,7 +637,7 @@ export default function WhatsAppLinkGenerator() {
   // Batch Sending Logic
   const startBatchSend = useCallback(() => {
     if (filteredContacts.length === 0) {
-      alert("No contacts to send in the filtered list.")
+      toast.error("No contacts to send in the filtered list.")
       return
     }
     setIsBatchSending(true)
@@ -611,6 +653,7 @@ export default function WhatsAppLinkGenerator() {
         if (batchSendTimeoutRef.current) {
           clearTimeout(batchSendTimeoutRef.current)
         }
+        toast.success("Batch sending completed!")
         return
       }
 
@@ -635,7 +678,7 @@ export default function WhatsAppLinkGenerator() {
     if (batchSendTimeoutRef.current) {
       clearTimeout(batchSendTimeoutRef.current)
     }
-    alert("Batch sending stopped.")
+    toast.info("Batch sending stopped.")
   }, [])
 
   return (
@@ -680,254 +723,303 @@ export default function WhatsAppLinkGenerator() {
           </div>
         </div>
 
-        {/* Contact Management System */}
-        <ContactManagement
-          database={database}
-          isLoading={storageLoading}
-          onSaveContacts={saveContacts}
-          onMergeContacts={mergeContacts}
-          onUpdateContactStatus={updateContactStatus}
-          onDeleteContact={deleteContact}
-          onExportContacts={exportContacts}
-          onClearAllContacts={clearAllContacts}
-          currentContacts={contacts}
-          onUpdateCurrentContacts={setContacts}
-        />
+        {/* Tabbed Interface */}
+        <Tabs defaultValue="upload" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Upload File</span>
+              <span className="sm:hidden">Upload</span>
+            </TabsTrigger>
+            <TabsTrigger value="sheets" className="flex items-center gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              <span className="hidden sm:inline">Google Sheets</span>
+              <span className="sm:hidden">Sheets</span>
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Manual Entry</span>
+              <span className="sm:hidden">Manual</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Templates</span>
+              <span className="sm:hidden">Templates</span>
+            </TabsTrigger>
+            <TabsTrigger value="manage" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Manage</span>
+              <span className="sm:hidden">Manage</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Upload Section */}
-        <Card className="border-2 border-dashed border-gray-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6">
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-green-800 text-lg sm:text-xl">
-              <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="text-sm sm:text-base">Upload Excel/CSV File with Business Data</span>
-            </CardTitle>
-            <CardDescription className="text-green-600 text-xs sm:text-sm">
-              Excel/CSV columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size: 10MB
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            {/* Professional Password Input */}
-            <Card className="mb-4 sm:mb-6 border-amber-200 bg-amber-50">
-              <CardHeader className="pb-3 p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-amber-800 text-base sm:text-lg">
-                  <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Security Authentication
+          {/* Upload File Tab */}
+          <TabsContent value="upload">
+            <Card className="border-2 border-dashed border-gray-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6">
+                <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-green-800 text-lg sm:text-xl">
+                  <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="text-sm sm:text-base">Upload Excel/CSV File with Business Data</span>
                 </CardTitle>
-                <CardDescription className="text-amber-700 text-xs sm:text-sm">
-                  Enter the upload password to access file upload functionality
+                <CardDescription className="text-green-600 text-xs sm:text-sm">
+                  Excel/CSV columns: Phone Number, Company Name, Company Category, Website (optional) • Max file size:
+                  10MB
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 p-4 sm:p-6">
-                <div className="space-y-3">
-                  <Label htmlFor="upload-password" className="text-sm font-medium text-amber-800">
-                    Upload Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="upload-password"
-                      type={showPassword ? "text" : "password"}
-                      value={uploadPassword}
-                      onChange={(e) => {
-                        setUploadPassword(e.target.value)
-                        setPasswordError("") // Clear error on change
-                      }}
-                      placeholder="Enter your upload password"
-                      className={`pr-10 text-sm sm:text-base ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-amber-600" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-amber-600" />
+              <CardContent className="p-4 sm:p-6">
+                {/* Professional Password Input */}
+                <Card className="mb-4 sm:mb-6 border-amber-200 bg-amber-50">
+                  <CardHeader className="pb-3 p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-amber-800 text-base sm:text-lg">
+                      <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
+                      Security Authentication
+                    </CardTitle>
+                    <CardDescription className="text-amber-700 text-xs sm:text-sm">
+                      Enter the upload password to access file upload functionality
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 p-4 sm:p-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="upload-password" className="text-sm font-medium text-amber-800">
+                        Upload Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="upload-password"
+                          type={showPassword ? "text" : "password"}
+                          value={uploadPassword}
+                          onChange={(e) => {
+                            setUploadPassword(e.target.value)
+                            setPasswordError("") // Clear error on change
+                          }}
+                          placeholder="Enter your upload password"
+                          className={`pr-10 text-sm sm:text-base ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-amber-600" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-amber-600" />
+                          )}
+                        </Button>
+                      </div>
+                      {passwordError && (
+                        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                          <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs sm:text-sm text-red-700">{passwordError}</p>
+                        </div>
                       )}
-                    </Button>
+                      {uploadPassword === UPLOAD_PASSWORD && (
+                        <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs sm:text-sm text-green-700">
+                            Password verified. You can now upload files.
+                          </p>
+                        </div>
+                      )}
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <p className="text-xs text-blue-700">
+                          <strong>Default Password:</strong> Pass123123
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          This security measure protects against unauthorized file uploads.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* File Size Error */}
+                {fileError && (
+                  <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-red-800 text-sm sm:text-base">Upload Error</h4>
+                        <p className="text-xs sm:text-sm text-red-700 mt-1">{fileError}</p>
+                      </div>
+                    </div>
                   </div>
-                  {passwordError && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs sm:text-sm text-red-700">{passwordError}</p>
+                )}
+
+                <div
+                  className={`relative border-2 border-dashed rounded-xl p-6 sm:p-12 text-center transition-all duration-300 ${
+                    dragActive
+                      ? "border-green-400 bg-green-50 scale-105"
+                      : "border-gray-300 hover:border-green-400 hover:bg-gray-50"
+                  } ${uploadPassword !== UPLOAD_PASSWORD ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="p-3 sm:p-4 bg-green-100 rounded-full w-fit mx-auto">
+                      <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-green-600" />
                     </div>
-                  )}
-                  {uploadPassword === UPLOAD_PASSWORD && (
-                    <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs sm:text-sm text-green-700">Password verified. You can now upload files.</p>
+                    <div className="space-y-2">
+                      <p className="text-base sm:text-xl font-semibold text-gray-700">
+                        <span className="hidden sm:inline">Drag and drop your Excel/CSV file here</span>
+                        <span className="sm:hidden">Upload your Excel/CSV file</span>
+                      </p>
+                      <p className="text-gray-500 text-sm">or</p>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
+                        disabled={uploadPassword !== UPLOAD_PASSWORD}
+                        onClick={() => {
+                          const fileInput = document.getElementById("file-upload") as HTMLInputElement
+                          if (fileInput) {
+                            fileInput.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose File
+                      </Button>
+                      <Input
+                        id="file-upload"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        disabled={uploadPassword !== UPLOAD_PASSWORD}
+                      />
                     </div>
-                  )}
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                    <p className="text-xs text-blue-700">
-                      <strong>Default Password:</strong> Pass123123
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      This security measure protects against unauthorized file uploads.
-                    </p>
+                    <div className="text-xs sm:text-sm text-gray-500 space-y-1">
+                      <p>Expected columns: Phone, Company Name, Category, Website, and any custom columns</p>
+                      <p>Supports: .xlsx, .xls, .csv files • Maximum size: 10MB</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* File Size Error */}
-            {fileError && (
-              <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-semibold text-red-800 text-sm sm:text-base">Upload Error</h4>
-                    <p className="text-xs sm:text-sm text-red-700 mt-1">{fileError}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Google Sheets Tab */}
+          <TabsContent value="sheets">
+            <GoogleSheetsImport onImportContacts={handleImportContacts} onShowToast={showToast} />
+          </TabsContent>
 
-            <div
-              className={`relative border-2 border-dashed rounded-xl p-6 sm:p-12 text-center transition-all duration-300 ${
-                dragActive
-                  ? "border-green-400 bg-green-50 scale-105"
-                  : "border-gray-300 hover:border-green-400 hover:bg-gray-50"
-              } ${uploadPassword !== UPLOAD_PASSWORD ? "opacity-50 cursor-not-allowed" : ""}`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <div className="space-y-3 sm:space-y-4">
-                <div className="p-3 sm:p-4 bg-green-100 rounded-full w-fit mx-auto">
-                  <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-green-600" />
-                </div>
+          {/* Manual Entry Tab */}
+          <TabsContent value="manual">
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-cyan-800 text-lg sm:text-xl">
+                  <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
+                  Manual Number Entry
+                </CardTitle>
+                <CardDescription className="text-cyan-600 text-xs sm:text-sm">
+                  Generate a WhatsApp link for a single phone number
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="space-y-2">
-                  <p className="text-base sm:text-xl font-semibold text-gray-700">
-                    <span className="hidden sm:inline">Drag and drop your Excel/CSV file here</span>
-                    <span className="sm:hidden">Upload your Excel/CSV file</span>
-                  </p>
-                  <p className="text-gray-500 text-sm">or</p>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
-                    disabled={uploadPassword !== UPLOAD_PASSWORD}
-                    onClick={() => {
-                      const fileInput = document.getElementById("file-upload") as HTMLInputElement
-                      if (fileInput) {
-                        fileInput.click()
-                      }
-                    }}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </Button>
+                  <Label htmlFor="manual-phone" className="text-sm font-medium">
+                    Phone Number
+                  </Label>
                   <Input
-                    id="file-upload"
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    disabled={uploadPassword !== UPLOAD_PASSWORD}
+                    id="manual-phone"
+                    type="tel"
+                    value={manualPhoneNumber}
+                    onChange={(e) => {
+                      setManualPhoneNumber(e.target.value)
+                      setManualPhoneError("")
+                      setManualLink("") // Clear link when phone number changes
+                    }}
+                    placeholder="e.g., 0551234567 or +966551234567"
+                    className={`text-sm sm:text-base ${manualPhoneError ? "border-red-500" : ""}`}
                   />
+                  {manualPhoneError && (
+                    <p className="text-xs sm:text-sm text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+                      {manualPhoneError}
+                    </p>
+                  )}
                 </div>
-                <div className="text-xs sm:text-sm text-gray-500 space-y-1">
-                  <p>Expected columns: Phone, Company Name, Category, Website, and any custom columns</p>
-                  <p>Supports: .xlsx, .xls, .csv files • Maximum size: 10MB</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <Button onClick={handleGenerateManualLink} className="bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto">
+                  <Send className="h-4 w-4 mr-2" />
+                  Generate Link
+                </Button>
 
-        {/* Manual Number Entry Section */}
-        <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 sm:p-6">
-            <CardTitle className="flex items-center gap-2 text-cyan-800 text-lg sm:text-xl">
-              <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
-              Manual Number Entry
-            </CardTitle>
-            <CardDescription className="text-cyan-600 text-xs sm:text-sm">
-              Generate a WhatsApp link for a single phone number
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="manual-phone" className="text-sm font-medium">
-                Phone Number
-              </Label>
-              <Input
-                id="manual-phone"
-                type="tel"
-                value={manualPhoneNumber}
-                onChange={(e) => {
-                  setManualPhoneNumber(e.target.value)
-                  setManualPhoneError("")
-                  setManualLink("") // Clear link when phone number changes
-                }}
-                placeholder="e.g., 0551234567 or +966551234567"
-                className={`text-sm sm:text-base ${manualPhoneError ? "border-red-500" : ""}`}
-              />
-              {manualPhoneError && (
-                <p className="text-xs sm:text-sm text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
-                  {manualPhoneError}
-                </p>
-              )}
-            </div>
-            <Button onClick={handleGenerateManualLink} className="bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto">
-              <Send className="h-4 w-4 mr-2" />
-              Generate Link
-            </Button>
-
-            {manualLink && (
-              <div className="space-y-2 mt-4">
-                <Label className="text-sm font-medium">Generated WhatsApp Link</Label>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <Input value={manualLink} readOnly className="flex-1 text-xs sm:text-sm" />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyManualLink}
-                      className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent flex-1 sm:flex-none"
-                    >
-                      {manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      <span className="ml-2 sm:hidden">Copy</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(manualLink, "_blank")}
-                      className="border-blue-200 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="ml-2 sm:hidden">Open</span>
-                    </Button>
+                {manualLink && (
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-sm font-medium">Generated WhatsApp Link</Label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <Input value={manualLink} readOnly className="flex-1 text-xs sm:text-sm" />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyManualLink}
+                          className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent flex-1 sm:flex-none"
+                        >
+                          {manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          <span className="ml-2 sm:hidden">Copy</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(manualLink, "_blank")}
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          <span className="ml-2 sm:hidden">Open</span>
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      This link uses the current message from the templates section.
+                    </p>
                   </div>
-                </div>
-                <p className="text-xs text-gray-500">This link uses the current message from the editor below.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Message Templates Section */}
-        <MessageTemplates
-          templates={templates}
-          onTemplateSelect={applyTemplate}
-          selectedTemplate={selectedTemplate}
-          onTemplateCreate={(template) => setTemplates([...templates, template])}
-          onTemplateUpdate={(updatedTemplate) => {
-            setTemplates(templates.map((t) => (t.id === updatedTemplate.id ? updatedTemplate : t)))
-          }}
-          onTemplateDelete={(templateId) => {
-            setTemplates(templates.filter((t) => t.id !== templateId))
-            if (selectedTemplate?.id === templateId) {
-              setSelectedTemplate(null)
-            }
-          }}
-          availableCustomVariables={availableCustomVariables} // Pass custom variables
-        />
+          {/* Templates Tab */}
+          <TabsContent value="templates">
+            <MessageTemplates
+              templates={templates}
+              onTemplateSelect={applyTemplate}
+              selectedTemplate={selectedTemplate}
+              onTemplateCreate={(template) => setTemplates([...templates, template])}
+              onTemplateUpdate={(updatedTemplate) => {
+                setTemplates(templates.map((t) => (t.id === updatedTemplate.id ? updatedTemplate : t)))
+              }}
+              onTemplateDelete={(templateId) => {
+                setTemplates(templates.filter((t) => t.id !== templateId))
+                if (selectedTemplate?.id === templateId) {
+                  setSelectedTemplate(null)
+                }
+              }}
+              availableCustomVariables={availableCustomVariables}
+            />
+          </TabsContent>
+
+          {/* Manage Tab */}
+          <TabsContent value="manage">
+            <ContactManagement
+              database={database}
+              isLoading={storageLoading}
+              onSaveContacts={saveContacts}
+              onMergeContacts={mergeContacts}
+              onUpdateContactStatus={updateContactStatus}
+              onDeleteContact={deleteContact}
+              onExportContacts={exportContacts}
+              onClearAllContacts={clearAllContacts}
+              currentContacts={contacts}
+              onUpdateCurrentContacts={setContacts}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Rich Text Editor Section */}
         <Card className="shadow-lg">
