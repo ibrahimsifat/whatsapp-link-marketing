@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useCallback, useMemo, useRef, useEffect } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,14 +28,6 @@ import {
   FileSpreadsheet,
   Plus,
 } from "lucide-react"
-import * as XLSX from "xlsx"
-import { RichTextEditor } from "./components/rich-text-editor"
-import { MessageTemplates } from "./components/message-templates"
-import { ContactManagement } from "./components/contact-management"
-import { ContactCard } from "./components/contact-card"
-import { GoogleSheetsImport } from "./components/google-sheets-import"
-import { useContactStorage } from "./hooks/use-contact-storage"
-import type { Contact, MessageTemplate } from "./types/contact"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,87 +39,39 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
 
-const defaultTemplates: MessageTemplate[] = [
-  {
-    id: "welcome_with_website",
-    name: "Welcome - With Website",
-    category: "Welcome",
-    content:
-      "Hello *{companyName}*! 👋\n\nI noticed your company in the _{companyCategory}_ industry. I visited your website at {website} and I'm impressed!\n\nWe specialize in helping businesses like yours grow. Would you be interested in a quick chat about how we can support your business goals?",
-    variables: ["{companyName}", "{companyCategory}", "{website}"],
-    targetAudience: "with_website",
-  },
-  {
-    id: "welcome_no_website",
-    name: "Welcome - No Website",
-    category: "Welcome",
-    content:
-      "Hello *{companyName}*! 👋\n\nI see you're in the _{companyCategory}_ industry. In today's digital world, having an online presence is crucial for business growth.\n\nWe help businesses like yours establish a strong digital presence. Would you like to discuss how we can help you get online and reach more customers?",
-    variables: ["{companyName}", "{companyCategory}"],
-    targetAudience: "no_website",
-  },
-  {
-    id: "follow_up_general",
-    name: "Follow Up - General",
-    category: "Follow Up",
-    content:
-      "Hi *{companyName}*! 👋\n\nI hope you're doing well. I wanted to follow up on our previous conversation about growing your _{companyCategory}_ business.\n\nDo you have a few minutes to discuss how we can help you achieve your business goals?",
-    variables: ["{companyName}", "{companyCategory}"],
-    targetAudience: "all",
-  },
-  {
-    id: "service_offer",
-    name: "Service Offer",
-    category: "Sales",
-    content:
-      "Hello *{companyName}*! 🚀\n\nAs a _{companyCategory}_ business, you understand the importance of staying competitive. We're offering a *special package* designed specifically for companies in your industry.\n\n✅ Increase your online visibility\n✅ Generate more leads\n✅ Boost your revenue\n\nInterested in learning more? Let's schedule a quick 15-minute call!",
-    variables: ["{companyName}", "{companyCategory}"],
-    targetAudience: "all",
-  },
-  {
-    id: "custom_variable_example",
-    name: "Custom Variable Example",
-    category: "Custom",
-    content:
-      "Hi {contactPerson}! This is a message about your interest in {product}. Your last interaction was on {lastInteractionDate}. Let's connect!",
-    variables: ["{contactPerson}", "{product}", "{lastInteractionDate}"],
-    targetAudience: "all",
-  },
-]
+// Components
+import { RichTextEditor } from "./components/rich-text-editor"
+import { MessageTemplates } from "./components/message-templates"
+import { ContactManagement } from "./components/contact-management"
+import { ContactCard } from "./components/contact-card"
+import { GoogleSheetsImport } from "./components/google-sheets-import"
+import { Pagination } from "./components/pagination"
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
-const UPLOAD_PASSWORD = "Pass123123"
-const BATCH_SEND_DELAY_MS = 500 // Delay between opening WhatsApp tabs
+// Hooks
+import { useContactStorage } from "./hooks/use-contact-storage"
+import { useAppState } from "./hooks/use-app-state"
+
+// Services
+import { FileService } from "./services/file-service"
+import { PhoneService } from "./services/phone-service"
+import { WhatsAppService } from "./services/whatsapp-service"
+import { TemplateService } from "./services/template-service"
+import { ContactFilterService } from "./services/contact-filter-service"
+import { BatchSendService } from "./services/batch-send-service"
+
+// Utils
+import { ClipboardUtils } from "./utils/clipboard-utils"
+import { ToastUtils } from "./utils/toast-utils"
+
+// Constants
+import { APP_CONSTANTS } from "./constants/app-constants"
+
+// Types
+import type { Contact, MessageTemplate } from "./types/contact"
 
 export default function WhatsAppLinkGenerator() {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
-  const [customMessage, setCustomMessage] = useState("")
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
-  const [templates, setTemplates] = useState<MessageTemplate[]>(defaultTemplates)
-  const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null)
-  const [filterCategory, setFilterCategory] = useState<string>("all")
-  const [filterWebsite, setFilterWebsite] = useState<string>("all")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  const [fileError, setFileError] = useState<string>("")
-  const [uploadPassword, setUploadPassword] = useState<string>("")
-  const [passwordError, setPasswordError] = useState<string>("")
-  const [showPassword, setShowPassword] = useState<boolean>(false)
-
-  // Manual number input states
-  const [manualPhoneNumber, setManualPhoneNumber] = useState<string>("")
-  const [manualLink, setManualLink] = useState<string>("")
-  const [manualLinkCopied, setManualLinkCopied] = useState<boolean>(false)
-  const [manualPhoneError, setManualPhoneError] = useState<string>("")
-
-  // Batch sending states
-  const [isBatchSending, setIsBatchSending] = useState(false)
-  const [currentBatchIndex, setCurrentBatchIndex] = useState(0)
+  const { state, updateState, resetState, resetPagination } = useAppState()
   const batchSendTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Contact storage hook
@@ -145,556 +88,268 @@ export default function WhatsAppLinkGenerator() {
 
   // Load saved contacts on component mount and when database changes
   useEffect(() => {
-    if (database.contacts.length > 0 && contacts.length === 0) {
-      setContacts(database.contacts)
+    if (database.contacts.length > 0 && state.contacts.length === 0) {
+      updateState({ contacts: database.contacts })
     }
-  }, [database.contacts, contacts.length])
+  }, [database.contacts, state.contacts.length, updateState])
 
-  const normalizePhoneNumber = (phone: string): string | null => {
-    const cleaned = phone.replace(/\s+/g, "").replace(/[^\d+]/g, "")
+  // Reset pagination when filters change
+  useEffect(() => {
+    resetPagination()
+  }, [state.filterCategory, state.filterWebsite, state.filterStatus, state.searchTerm, resetPagination])
 
-    if (cleaned.match(/^05\d{8}$/)) {
-      return "+966" + cleaned.substring(1)
-    }
-    if (cleaned.match(/^5\d{8}$/)) {
-      return "+966" + cleaned
-    }
-    if (cleaned.match(/^\+9665\d{8}$/)) {
-      return cleaned
-    }
-    if (cleaned.match(/^9665\d{8}$/)) {
-      return "+" + cleaned
-    }
-
-    return null
-  }
-
-  const generateWhatsAppLink = (phone: string, message?: string): string => {
-    const baseUrl = "https://wa.me/"
-    const encodedMessage = message ? `?text=${encodeURIComponent(message)}` : ""
-    return baseUrl + phone.replace("+", "") + encodedMessage
-  }
-
-  const replaceVariables = (template: string, contact: Partial<Contact>): string => {
-    let replacedText = template
-      .replace(/\{companyName\}/g, contact.companyName || "there")
-      .replace(/\{companyCategory\}/g, contact.companyCategory || "your industry")
-      .replace(/\{website\}/g, contact.website || "")
-
-    // Replace custom dynamic variables
-    if (contact.dynamicData) {
-      for (const key in contact.dynamicData) {
-        if (Object.prototype.hasOwnProperty.call(contact.dynamicData, key)) {
-          const value = contact.dynamicData[key]
-          // Use a more robust regex to match the exact variable name
-          replacedText = replacedText.replace(new RegExp(`\\{${key}\\}`, "g"), String(value || ""))
-        }
-      }
-    }
-    return replacedText
-  }
-
-  const generateContactId = (phone: string): string => {
-    return `contact_${phone.replace(/[^\d]/g, "")}_${Date.now()}`
-  }
-
-  const validateFileSize = (file: File): boolean => {
-    if (file.size > MAX_FILE_SIZE) {
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
-      setFileError(
-        `File size (${fileSizeMB}MB) exceeds the maximum limit of 10MB. Please reduce the file size or split into smaller files.`,
-      )
-      return false
-    }
-    setFileError("")
-    return true
-  }
-
-  const processFile = useCallback(
-    async (file: File) => {
-      // Validate file size first
-      if (!validateFileSize(file)) {
-        return
-      }
-
-      setIsLoading(true)
-      setFileError("")
-
-      try {
-        let data: string[][] = []
-
-        if (file.name.endsWith(".csv")) {
-          // Process CSV file
-          const text = await file.text()
-          const lines = text.split("\n").filter((line) => line.trim())
-          data = lines.map((line) => {
-            // Handle CSV parsing with proper quote handling
-            const result: string[] = []
-            let current = ""
-            let inQuotes = false
-
-            for (let i = 0; i < line.length; i++) {
-              const char = line[i]
-              if (char === '"') {
-                inQuotes = !inQuotes
-              } else if (char === "," && !inQuotes) {
-                result.push(current.trim())
-                current = ""
-              } else {
-                current += char
-              }
-            }
-            result.push(current.trim())
-            return result
-          })
-        } else {
-          // Process Excel file
-          const buffer = await file.arrayBuffer()
-          const workbook = XLSX.read(buffer, { type: "array" })
-          const sheetName = workbook.SheetNames[0]
-          const worksheet = workbook.Sheets[sheetName]
-          data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
-        }
-
-        const processedContacts: Contact[] = []
-        const seenNumbers = new Set<string>()
-
-        // Find header row and column indices
-        const headerRow = data[0] || []
-        const phoneColumns: number[] = []
-        let companyNameCol = -1
-        let companyCategoryCol = -1
-        let websiteCol = -1
-        const dynamicDataCols: { name: string; index: number }[] = []
-
-        headerRow.forEach((header, index) => {
-          const headerStr = String(header).toLowerCase()
-          if (headerStr.includes("phone") || headerStr.includes("mobile") || headerStr.includes("number")) {
-            phoneColumns.push(index)
-          } else if (headerStr.includes("company") && headerStr.includes("name")) {
-            companyNameCol = index
-          } else if (headerStr.includes("category") || headerStr.includes("industry") || headerStr.includes("type")) {
-            companyCategoryCol = index
-          } else if (headerStr.includes("website") || headerStr.includes("url") || headerStr.includes("site")) {
-            websiteCol = index
-          } else if (headerStr) {
-            // Any other non-empty header is considered a dynamic data column
-            dynamicDataCols.push({ name: String(header), index })
-          }
-        })
-
-        data.forEach((row, rowIndex) => {
-          if (rowIndex === 0) return // Skip header row
-
-          let phoneNumber = ""
-          let companyName = ""
-          let companyCategory = ""
-          let website = ""
-          const dynamicData: Record<string, string | number | boolean | null | undefined> = {}
-
-          // Extract phone number
-          if (phoneColumns.length > 0) {
-            phoneNumber = String(row[phoneColumns[0]] || "")
-          } else {
-            // Fallback: search all columns for phone numbers
-            row.forEach((cell) => {
-              if (cell && typeof cell === "string") {
-                const phoneRegex = /(\+?966\s*|0)?[5]\s*\d[\s\d]{7,}/
-                if (phoneRegex.test(cell) && !phoneNumber) {
-                  phoneNumber = cell
-                }
-              }
-            })
-          }
-
-          // Extract company data
-          if (companyNameCol >= 0) companyName = String(row[companyNameCol] || "")
-          if (companyCategoryCol >= 0) companyCategory = String(row[companyCategoryCol] || "")
-          if (websiteCol >= 0) website = String(row[websiteCol] || "")
-
-          // Extract dynamic data
-          dynamicDataCols.forEach((col) => {
-            if (row[col.index] !== undefined && row[col.index] !== null && String(row[col.index]).trim() !== "") {
-              dynamicData[col.name] = row[col.index]
-            }
-          })
-
-          // Clean and validate website
-          if (website) {
-            website = website.trim()
-            if (website && !website.startsWith("http")) {
-              website = "https://" + website
-            }
-            // Check if website looks valid
-            if (!website.includes(".") || website.length < 8) {
-              website = ""
-            }
-          }
-
-          if (phoneNumber) {
-            const normalized = normalizePhoneNumber(phoneNumber)
-            if (normalized && !seenNumbers.has(normalized)) {
-              seenNumbers.add(normalized)
-
-              // Determine if company has website
-              const hasWebsite = Boolean(website)
-
-              // Auto-categorize if no category provided
-              if (!companyCategory && !hasWebsite) {
-                companyCategory = "No Website"
-              }
-
-              const contact: Contact = {
-                id: generateContactId(normalized),
-                original: phoneNumber,
-                normalized,
-                whatsappLink: generateWhatsAppLink(normalized, customMessage), // Will be updated later with full message
-                companyName: companyName || undefined,
-                companyCategory: companyCategory || undefined,
-                website: website || undefined,
-                hasWebsite,
-                status: "pending",
-                lastUpdated: new Date().toISOString(),
-                source: file.name,
-                dynamicData: Object.keys(dynamicData).length > 0 ? dynamicData : undefined,
-              }
-
-              processedContacts.push(contact)
-            }
-          }
-        })
-
-        // Update WhatsApp links with full personalized messages
-        const finalContacts = processedContacts.map((contact) => ({
-          ...contact,
-          whatsappLink: generateWhatsAppLink(contact.normalized, replaceVariables(customMessage, contact)),
-        }))
-
-        setContacts(finalContacts)
-        toast.success(`Successfully processed ${finalContacts.length} contacts from ${file.name}`)
-      } catch (error) {
-        console.error("Error processing file:", error)
-        setFileError("Error processing file. Please ensure it's a valid .xlsx, .xls, or .csv file.")
-        toast.error("Failed to process file")
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [customMessage],
-  )
-
-  const handleDrag = useCallback((e: React.DragEvent) => {
+  // File handling
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
+      updateState({ dragActive: true })
     } else if (e.type === "dragleave") {
-      setDragActive(false)
+      updateState({ dragActive: false })
     }
-  }, [])
+  }
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setDragActive(false)
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    updateState({ dragActive: false })
 
-      if (uploadPassword !== UPLOAD_PASSWORD) {
-        setPasswordError("Incorrect password. Please enter the correct password to upload.")
-        return
-      }
-      setPasswordError("") // Clear password error if correct
-
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        const file = e.dataTransfer.files[0]
-        if (
-          file.type.includes("sheet") ||
-          file.name.endsWith(".xlsx") ||
-          file.name.endsWith(".xls") ||
-          file.name.endsWith(".csv") ||
-          file.type === "text/csv"
-        ) {
-          processFile(file)
-        } else {
-          setFileError("Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)")
-        }
-      }
-    },
-    [processFile, uploadPassword],
-  )
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (uploadPassword !== UPLOAD_PASSWORD) {
-      setPasswordError("Incorrect password. Please enter the correct password to upload.")
-      e.target.value = "" // Clear the file input
+    if (state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD) {
+      updateState({ passwordError: "Incorrect password. Please enter the correct password to upload." })
       return
     }
-    setPasswordError("") // Clear password error if correct
+    updateState({ passwordError: "" })
 
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      if (
-        file.type.includes("sheet") ||
-        file.name.endsWith(".xlsx") ||
-        file.name.endsWith(".xls") ||
-        file.name.endsWith(".csv") ||
-        file.type === "text/csv"
-      ) {
-        processFile(file)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0]
+      if (isValidFileType(file)) {
+        await processFile(file)
       } else {
-        setFileError("Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)")
+        updateState({ fileError: "Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)" })
       }
     }
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD) {
+      updateState({ passwordError: "Incorrect password. Please enter the correct password to upload." })
+      e.target.value = ""
+      return
+    }
+    updateState({ passwordError: "" })
+
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      if (isValidFileType(file)) {
+        await processFile(file)
+      } else {
+        updateState({ fileError: "Please upload a valid Excel file (.xlsx, .xls) or CSV file (.csv)" })
+      }
+    }
+  }
+
+  const isValidFileType = (file: File): boolean => {
+    return (
+      file.type.includes("sheet") ||
+      file.name.endsWith(".xlsx") ||
+      file.name.endsWith(".xls") ||
+      file.name.endsWith(".csv") ||
+      file.type === "text/csv"
+    )
+  }
+
+  const processFile = async (file: File) => {
+    const validation = FileService.validateFileSize(file)
+    if (!validation.isValid) {
+      updateState({ fileError: validation.error || "File size validation failed" })
+      return
+    }
+
+    updateState({ isLoading: true, fileError: "" })
+
+    try {
+      const result = await FileService.processFile(file, state.customMessage)
+
+      if (result.errors.length > 0) {
+        updateState({ fileError: result.errors.join(", ") })
+        ToastUtils.error("File processing completed with errors")
+      } else {
+        ToastUtils.success(`Successfully processed ${result.contacts.length} contacts from ${file.name}`)
+      }
+
+      updateState({ contacts: result.contacts })
+    } catch (error) {
+      console.error("Error processing file:", error)
+      updateState({ fileError: "Unexpected error occurred while processing the file" })
+      ToastUtils.error("Failed to process file")
+    } finally {
+      updateState({ isLoading: false })
+    }
+  }
+
+  // Template handling
   const applyTemplate = (template: MessageTemplate) => {
-    setSelectedTemplate(template)
-    setCustomMessage(template.content)
+    updateState({ selectedTemplate: template, customMessage: template.content })
     updateWhatsAppLinks(template.content)
   }
 
   const updateWhatsAppLinks = (message?: string) => {
-    const messageToUse = message || customMessage
-    const updatedContacts = contacts.map((contact) => ({
+    const messageToUse = message || state.customMessage
+    const updatedContacts = state.contacts.map((contact) => ({
       ...contact,
-      whatsappLink: generateWhatsAppLink(contact.normalized, replaceVariables(messageToUse, contact)),
+      whatsappLink: WhatsAppService.generateWhatsAppLink(
+        contact.normalized,
+        TemplateService.replaceVariables(messageToUse, contact),
+      ),
     }))
-    setContacts(updatedContacts)
+    updateState({ contacts: updatedContacts })
   }
 
+  // Contact management
   const clearAll = async () => {
     try {
-      // Clear from storage first
       const result = await clearAllContacts()
 
       if (result.success) {
-        // Clear local state
-        setContacts([])
-        setCustomMessage("")
-        setSelectedTemplate(null)
-        setFileError("")
-        setManualPhoneNumber("")
-        setManualLink("")
-        setManualLinkCopied(false)
-        setManualPhoneError("")
-        setIsBatchSending(false)
-        setCurrentBatchIndex(0)
+        resetState()
         if (batchSendTimeoutRef.current) {
           clearTimeout(batchSendTimeoutRef.current)
         }
-
-        toast.success("All contacts cleared successfully")
+        ToastUtils.success("All contacts cleared successfully")
       } else {
-        toast.error(result.message || "Failed to clear contacts")
+        ToastUtils.error(result.message || "Failed to clear contacts")
       }
     } catch (error) {
       console.error("Error clearing contacts:", error)
-      toast.error("Failed to clear contacts")
+      ToastUtils.error("Failed to clear contacts")
     }
   }
 
   const loadSavedContacts = () => {
     if (database.contacts.length > 0) {
-      setContacts(database.contacts)
-      toast.success(`Loaded ${database.contacts.length} saved contacts`)
+      updateState({ contacts: database.contacts })
+      ToastUtils.success(`Loaded ${database.contacts.length} saved contacts`)
     }
-  }
-
-  const copyToClipboard = async (text: string, index: number) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedIndex(index)
-      setTimeout(() => setCopiedIndex(null), 2000)
-      toast.success("Link copied to clipboard!")
-    } catch (err) {
-      console.error("Failed to copy text: ", err)
-      toast.error("Failed to copy link")
-    }
-  }
-
-  const formatPhoneDisplay = (phone: string) => {
-    if (phone.startsWith("+966")) {
-      const number = phone.substring(4)
-      return `+966 ${number.substring(0, 2)} ${number.substring(2, 5)} ${number.substring(5)}`
-    }
-    return phone
-  }
-
-  const handleOpenWhatsApp = (contact: Contact) => {
-    window.open(contact.whatsappLink, "_blank")
-  }
-
-  const handleUpdateContactStatus = (contact: Contact) => {
-    setSelectedContact(contact)
   }
 
   const handleDeleteContact = async (contactId: string) => {
     const result = await deleteContact(contactId)
     if (result.success) {
-      // Remove from current contacts if it exists there
-      const updatedCurrentContacts = contacts.filter((c) => c.id !== contactId)
-      setContacts(updatedCurrentContacts)
-      toast.success("Contact deleted successfully")
+      const updatedCurrentContacts = state.contacts.filter((c) => c.id !== contactId)
+      updateState({ contacts: updatedCurrentContacts })
+      ToastUtils.success("Contact deleted successfully")
     } else {
-      toast.error("Failed to delete contact")
+      ToastUtils.error("Failed to delete contact")
     }
   }
 
+  // Manual link generation
   const handleGenerateManualLink = () => {
-    setManualLinkCopied(false)
-    setManualPhoneError("")
-    if (!manualPhoneNumber) {
-      setManualPhoneError("Please enter a phone number.")
-      setManualLink("")
+    updateState({ manualLinkCopied: false, manualPhoneError: "" })
+
+    if (!state.manualPhoneNumber) {
+      updateState({ manualPhoneError: "Please enter a phone number.", manualLink: "" })
       return
     }
-    const normalizedPhone = normalizePhoneNumber(manualPhoneNumber)
+
+    const normalizedPhone = PhoneService.normalizePhoneNumber(state.manualPhoneNumber)
     if (!normalizedPhone) {
-      setManualPhoneError("Invalid Saudi phone number format.")
-      setManualLink("")
+      updateState({ manualPhoneError: "Invalid Saudi phone number format.", manualLink: "" })
       return
     }
-    const link = generateWhatsAppLink(normalizedPhone, customMessage)
-    setManualLink(link)
-    toast.success("WhatsApp link generated!")
+
+    const link = WhatsAppService.generateWhatsAppLink(normalizedPhone, state.customMessage)
+    updateState({ manualLink: link })
+    ToastUtils.success("WhatsApp link generated!")
   }
 
   const handleCopyManualLink = async () => {
-    if (manualLink) {
-      try {
-        await navigator.clipboard.writeText(manualLink)
-        setManualLinkCopied(true)
-        setTimeout(() => setManualLinkCopied(false), 2000)
-        toast.success("Link copied to clipboard!")
-      } catch (err) {
-        console.error("Failed to copy manual link: ", err)
-        toast.error("Failed to copy link")
+    if (state.manualLink) {
+      const success = await ClipboardUtils.copyToClipboard(state.manualLink)
+      if (success) {
+        updateState({ manualLinkCopied: true })
+        setTimeout(() => updateState({ manualLinkCopied: false }), 2000)
+        ToastUtils.success("Link copied to clipboard!")
+      } else {
+        ToastUtils.error("Failed to copy link")
       }
     }
   }
 
+  // Contact import
   const handleImportContacts = (newContacts: Contact[]) => {
-    // Merge with existing contacts, avoiding duplicates
-    const existingNumbers = new Set(contacts.map((c) => c.normalized))
+    const existingNumbers = new Set(state.contacts.map((c) => c.normalized))
     const uniqueNewContacts = newContacts.filter((contact) => !existingNumbers.has(contact.normalized))
 
     if (uniqueNewContacts.length > 0) {
-      const updatedContacts = [...contacts, ...uniqueNewContacts]
-      setContacts(updatedContacts)
-
-      // Update WhatsApp links with current message
+      const updatedContacts = [...state.contacts, ...uniqueNewContacts]
       const finalContacts = updatedContacts.map((contact) => ({
         ...contact,
-        whatsappLink: generateWhatsAppLink(contact.normalized, replaceVariables(customMessage, contact)),
+        whatsappLink: WhatsAppService.generateWhatsAppLink(
+          contact.normalized,
+          TemplateService.replaceVariables(state.customMessage, contact),
+        ),
       }))
-      setContacts(finalContacts)
+      updateState({ contacts: finalContacts })
     }
   }
 
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    if (type === "success") {
-      toast.success(message)
+  // Clipboard operations
+  const copyToClipboard = async (text: string, index: number) => {
+    const success = await ClipboardUtils.copyToClipboard(text)
+    if (success) {
+      updateState({ copiedIndex: index })
+      setTimeout(() => updateState({ copiedIndex: null }), 2000)
+      ToastUtils.success("Link copied to clipboard!")
     } else {
-      toast.error(message)
+      ToastUtils.error("Failed to copy link")
     }
   }
 
-  // Memoized filtered contacts for performance
-  const filteredContacts = useMemo(() => {
-    return contacts.filter((contact) => {
-      // Category filter
-      if (filterCategory !== "all" && contact.companyCategory !== filterCategory) return false
-
-      // Website filter
-      if (filterWebsite === "with_website" && !contact.hasWebsite) return false
-      if (filterWebsite === "no_website" && contact.hasWebsite) return false
-
-      // Status filter
-      if (filterStatus !== "all" && contact.status !== filterStatus) return false
-
-      // Search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase()
-        const matchesSearch =
-          contact.companyName?.toLowerCase().includes(searchLower) ||
-          contact.companyCategory?.toLowerCase().includes(searchLower) ||
-          contact.normalized.includes(searchTerm) ||
-          contact.website?.toLowerCase().includes(searchLower) ||
-          (contact.dynamicData &&
-            Object.values(contact.dynamicData).some((val) => String(val).toLowerCase().includes(searchLower)))
-
-        if (!matchesSearch) return false
-      }
-
-      return true
-    })
-  }, [contacts, filterCategory, filterWebsite, filterStatus, searchTerm])
-
-  // Get unique categories and website status for filtering
-  const categories = Array.from(new Set(contacts.map((c) => c.companyCategory).filter(Boolean)))
-  const websiteStats = {
-    total: contacts.length,
-    withWebsite: contacts.filter((c) => c.hasWebsite).length,
-    noWebsite: contacts.filter((c) => !c.hasWebsite).length,
-  }
-
-  // Extract all unique dynamic data keys for template hints
-  const availableCustomVariables = useMemo(() => {
-    const keys = new Set<string>()
-    contacts.forEach((contact) => {
-      if (contact.dynamicData) {
-        Object.keys(contact.dynamicData).forEach((key) => keys.add(key))
-      }
-    })
-    return Array.from(keys)
-  }, [contacts])
-
-  // Batch Sending Logic
-  const startBatchSend = useCallback(() => {
-    if (filteredContacts.length === 0) {
-      toast.error("No contacts to send in the filtered list.")
+  // Batch sending
+  const startBatchSend = () => {
+    if (paginatedContacts.contacts.length === 0) {
+      ToastUtils.error("No contacts to send in the current page.")
       return
     }
-    setIsBatchSending(true)
-    setCurrentBatchIndex(0)
-    processBatchSend(0)
-  }, [filteredContacts])
 
-  const processBatchSend = useCallback(
-    (index: number) => {
-      if (index >= filteredContacts.length || !isBatchSending) {
-        setIsBatchSending(false)
-        setCurrentBatchIndex(0)
-        if (batchSendTimeoutRef.current) {
-          clearTimeout(batchSendTimeoutRef.current)
-        }
-        toast.success("Batch sending completed!")
-        return
-      }
+    updateState({ isBatchSending: true, currentBatchIndex: 0 })
 
-      const contact = filteredContacts[index]
-      handleOpenWhatsApp(contact) // Opens the WhatsApp link in a new tab
+    BatchSendService.startBatchSend({
+      contacts: paginatedContacts.contacts,
+      delayMs: APP_CONSTANTS.BATCH_SEND_DELAY_MS,
+      onProgress: (index) => updateState({ currentBatchIndex: index }),
+      onComplete: () => {
+        updateState({ isBatchSending: false, currentBatchIndex: 0 })
+        ToastUtils.success("Batch sending completed!")
+      },
+      onContactSent: (contactId) => updateContactStatus(contactId, "sent"),
+    })
+  }
 
-      // Automatically update status to 'sent' after opening
-      // This is a client-side simulation; actual delivery status requires WhatsApp API
-      updateContactStatus(contact.id, "sent")
+  const stopBatchSend = () => {
+    BatchSendService.stopBatchSend()
+    updateState({ isBatchSending: false })
+    ToastUtils.info("Batch sending stopped.")
+  }
 
-      setCurrentBatchIndex(index + 1)
+  // Computed values
+  const filteredContacts = useMemo(() => {
+    return ContactFilterService.filterContacts(state.contacts, {
+      category: state.filterCategory,
+      website: state.filterWebsite,
+      status: state.filterStatus,
+      searchTerm: state.searchTerm,
+    })
+  }, [state.contacts, state.filterCategory, state.filterWebsite, state.filterStatus, state.searchTerm])
 
-      batchSendTimeoutRef.current = setTimeout(() => {
-        processBatchSend(index + 1)
-      }, BATCH_SEND_DELAY_MS)
-    },
-    [filteredContacts, isBatchSending, updateContactStatus],
-  )
+  const paginatedContacts = useMemo(() => {
+    return ContactFilterService.paginateContacts(filteredContacts, state.currentPage, state.itemsPerPage)
+  }, [filteredContacts, state.currentPage, state.itemsPerPage])
 
-  const stopBatchSend = useCallback(() => {
-    setIsBatchSending(false)
-    if (batchSendTimeoutRef.current) {
-      clearTimeout(batchSendTimeoutRef.current)
-    }
-    toast.info("Batch sending stopped.")
-  }, [])
+  const categories = ContactFilterService.getUniqueCategories(state.contacts)
+  const websiteStats = ContactFilterService.getWebsiteStats(state.contacts)
+  const availableCustomVariables = TemplateService.extractCustomVariables(state.contacts)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-2 sm:p-4">
@@ -706,7 +361,7 @@ export default function WhatsAppLinkGenerator() {
               <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent text-center">
-              WhatsApp Business Link Generator
+              {APP_CONSTANTS.APP_NAME}
             </h1>
           </div>
           <p className="text-gray-600 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto px-4">
@@ -801,36 +456,35 @@ export default function WhatsAppLinkGenerator() {
                       <div className="relative">
                         <Input
                           id="upload-password"
-                          type={showPassword ? "text" : "password"}
-                          value={uploadPassword}
+                          type={state.showPassword ? "text" : "password"}
+                          value={state.uploadPassword}
                           onChange={(e) => {
-                            setUploadPassword(e.target.value)
-                            setPasswordError("") // Clear error on change
+                            updateState({ uploadPassword: e.target.value, passwordError: "" })
                           }}
                           placeholder="Enter your upload password"
-                          className={`pr-10 text-sm sm:text-base ${passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
+                          className={`pr-10 text-sm sm:text-base ${state.passwordError ? "border-red-500 focus:border-red-500" : "border-amber-300 focus:border-amber-500"}`}
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={() => updateState({ showPassword: !state.showPassword })}
                         >
-                          {showPassword ? (
+                          {state.showPassword ? (
                             <EyeOff className="h-4 w-4 text-amber-600" />
                           ) : (
                             <Eye className="h-4 w-4 text-amber-600" />
                           )}
                         </Button>
                       </div>
-                      {passwordError && (
+                      {state.passwordError && (
                         <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                           <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-xs sm:text-sm text-red-700">{passwordError}</p>
+                          <p className="text-xs sm:text-sm text-red-700">{state.passwordError}</p>
                         </div>
                       )}
-                      {uploadPassword === UPLOAD_PASSWORD && (
+                      {state.uploadPassword === APP_CONSTANTS.UPLOAD_PASSWORD && (
                         <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
                           <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                           <p className="text-xs sm:text-sm text-green-700">
@@ -840,7 +494,7 @@ export default function WhatsAppLinkGenerator() {
                       )}
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                         <p className="text-xs text-blue-700">
-                          <strong>Default Password:</strong> Pass123123
+                          <strong>Default Password:</strong> {APP_CONSTANTS.UPLOAD_PASSWORD}
                         </p>
                         <p className="text-xs text-blue-600 mt-1">
                           This security measure protects against unauthorized file uploads.
@@ -851,13 +505,13 @@ export default function WhatsAppLinkGenerator() {
                 </Card>
 
                 {/* File Size Error */}
-                {fileError && (
+                {state.fileError && (
                   <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
                     <div className="flex items-start gap-2 sm:gap-3">
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <h4 className="font-semibold text-red-800 text-sm sm:text-base">Upload Error</h4>
-                        <p className="text-xs sm:text-sm text-red-700 mt-1">{fileError}</p>
+                        <p className="text-xs sm:text-sm text-red-700 mt-1">{state.fileError}</p>
                       </div>
                     </div>
                   </div>
@@ -865,10 +519,10 @@ export default function WhatsAppLinkGenerator() {
 
                 <div
                   className={`relative border-2 border-dashed rounded-xl p-6 sm:p-12 text-center transition-all duration-300 ${
-                    dragActive
+                    state.dragActive
                       ? "border-green-400 bg-green-50 scale-105"
                       : "border-gray-300 hover:border-green-400 hover:bg-gray-50"
-                  } ${uploadPassword !== UPLOAD_PASSWORD ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD ? "opacity-50 cursor-not-allowed" : ""}`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -888,7 +542,7 @@ export default function WhatsAppLinkGenerator() {
                         size="lg"
                         variant="outline"
                         className="cursor-pointer bg-white hover:bg-green-50 border-green-200 w-full sm:w-auto"
-                        disabled={uploadPassword !== UPLOAD_PASSWORD}
+                        disabled={state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD}
                         onClick={() => {
                           const fileInput = document.getElementById("file-upload") as HTMLInputElement
                           if (fileInput) {
@@ -905,7 +559,7 @@ export default function WhatsAppLinkGenerator() {
                         accept=".xlsx,.xls,.csv"
                         onChange={handleFileChange}
                         className="hidden"
-                        disabled={uploadPassword !== UPLOAD_PASSWORD}
+                        disabled={state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD}
                       />
                     </div>
                     <div className="text-xs sm:text-sm text-gray-500 space-y-1">
@@ -920,7 +574,7 @@ export default function WhatsAppLinkGenerator() {
 
           {/* Google Sheets Tab */}
           <TabsContent value="sheets">
-            <GoogleSheetsImport onImportContacts={handleImportContacts} onShowToast={showToast} />
+            <GoogleSheetsImport onImportContacts={handleImportContacts} onShowToast={ToastUtils.success} />
           </TabsContent>
 
           {/* Manual Entry Tab */}
@@ -943,19 +597,21 @@ export default function WhatsAppLinkGenerator() {
                   <Input
                     id="manual-phone"
                     type="tel"
-                    value={manualPhoneNumber}
+                    value={state.manualPhoneNumber}
                     onChange={(e) => {
-                      setManualPhoneNumber(e.target.value)
-                      setManualPhoneError("")
-                      setManualLink("") // Clear link when phone number changes
+                      updateState({
+                        manualPhoneNumber: e.target.value,
+                        manualPhoneError: "",
+                        manualLink: "",
+                      })
                     }}
                     placeholder="e.g., 0551234567 or +966551234567"
-                    className={`text-sm sm:text-base ${manualPhoneError ? "border-red-500" : ""}`}
+                    className={`text-sm sm:text-base ${state.manualPhoneError ? "border-red-500" : ""}`}
                   />
-                  {manualPhoneError && (
+                  {state.manualPhoneError && (
                     <p className="text-xs sm:text-sm text-red-600 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {manualPhoneError}
+                      {state.manualPhoneError}
                     </p>
                   )}
                 </div>
@@ -964,11 +620,11 @@ export default function WhatsAppLinkGenerator() {
                   Generate Link
                 </Button>
 
-                {manualLink && (
+                {state.manualLink && (
                   <div className="space-y-2 mt-4">
                     <Label className="text-sm font-medium">Generated WhatsApp Link</Label>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <Input value={manualLink} readOnly className="flex-1 text-xs sm:text-sm" />
+                      <Input value={state.manualLink} readOnly className="flex-1 text-xs sm:text-sm" />
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
@@ -976,13 +632,13 @@ export default function WhatsAppLinkGenerator() {
                           onClick={handleCopyManualLink}
                           className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent flex-1 sm:flex-none"
                         >
-                          {manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          {state.manualLinkCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           <span className="ml-2 sm:hidden">Copy</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(manualLink, "_blank")}
+                          onClick={() => window.open(state.manualLink, "_blank")}
                           className="border-blue-200 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -1002,18 +658,20 @@ export default function WhatsAppLinkGenerator() {
           {/* Templates Tab */}
           <TabsContent value="templates">
             <MessageTemplates
-              templates={templates}
+              templates={state.templates}
               onTemplateSelect={applyTemplate}
-              selectedTemplate={selectedTemplate}
-              onTemplateCreate={(template) => setTemplates([...templates, template])}
+              selectedTemplate={state.selectedTemplate}
+              onTemplateCreate={(template) => updateState({ templates: [...state.templates, template] })}
               onTemplateUpdate={(updatedTemplate) => {
-                setTemplates(templates.map((t) => (t.id === updatedTemplate.id ? updatedTemplate : t)))
+                updateState({
+                  templates: state.templates.map((t) => (t.id === updatedTemplate.id ? updatedTemplate : t)),
+                })
               }}
               onTemplateDelete={(templateId) => {
-                setTemplates(templates.filter((t) => t.id !== templateId))
-                if (selectedTemplate?.id === templateId) {
-                  setSelectedTemplate(null)
-                }
+                updateState({
+                  templates: state.templates.filter((t) => t.id !== templateId),
+                  selectedTemplate: state.selectedTemplate?.id === templateId ? null : state.selectedTemplate,
+                })
               }}
               availableCustomVariables={availableCustomVariables}
             />
@@ -1030,8 +688,8 @@ export default function WhatsAppLinkGenerator() {
               onDeleteContact={deleteContact}
               onExportContacts={exportContacts}
               onClearAllContacts={clearAllContacts}
-              currentContacts={contacts}
-              onUpdateCurrentContacts={setContacts}
+              currentContacts={state.contacts}
+              onUpdateCurrentContacts={(contacts) => updateState({ contacts })}
             />
           </TabsContent>
         </Tabs>
@@ -1052,11 +710,11 @@ export default function WhatsAppLinkGenerator() {
           </CardHeader>
           <CardContent className="p-4 sm:p-6 space-y-4">
             <RichTextEditor
-              value={customMessage}
-              onChange={setCustomMessage}
+              value={state.customMessage}
+              onChange={(value) => updateState({ customMessage: value })}
               placeholder="Type your message here... Use {companyName}, {companyCategory}, {website} for personalization"
             />
-            {contacts.length > 0 && (
+            {state.contacts.length > 0 && (
               <Button onClick={() => updateWhatsAppLinks()} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
                 Update WhatsApp Links
@@ -1066,7 +724,7 @@ export default function WhatsAppLinkGenerator() {
         </Card>
 
         {/* Loading State */}
-        {isLoading && (
+        {state.isLoading && (
           <Card className="shadow-lg">
             <CardContent className="flex items-center justify-center py-8 sm:py-12">
               <div className="text-center space-y-4">
@@ -1081,7 +739,7 @@ export default function WhatsAppLinkGenerator() {
         )}
 
         {/* Statistics and Filters */}
-        {contacts.length > 0 && (
+        {state.contacts.length > 0 && (
           <Card className="shadow-lg">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6">
               <CardTitle className="flex items-center gap-2 text-purple-800 text-lg sm:text-xl">
@@ -1116,8 +774,8 @@ export default function WhatsAppLinkGenerator() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                     <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      value={state.searchTerm}
+                      onChange={(e) => updateState({ searchTerm: e.target.value })}
                       placeholder="Search by name, category, phone..."
                       className="pl-8 sm:pl-10 text-xs sm:text-sm"
                     />
@@ -1127,8 +785,8 @@ export default function WhatsAppLinkGenerator() {
                 <div className="space-y-2">
                   <Label className="text-xs sm:text-sm font-medium">Filter by Category</Label>
                   <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
+                    value={state.filterCategory}
+                    onChange={(e) => updateState({ filterCategory: e.target.value })}
                     className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Categories</option>
@@ -1143,8 +801,8 @@ export default function WhatsAppLinkGenerator() {
                 <div className="space-y-2">
                   <Label className="text-xs sm:text-sm font-medium">Filter by Website</Label>
                   <select
-                    value={filterWebsite}
-                    onChange={(e) => setFilterWebsite(e.target.value)}
+                    value={state.filterWebsite}
+                    onChange={(e) => updateState({ filterWebsite: e.target.value })}
                     className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Contacts</option>
@@ -1156,8 +814,8 @@ export default function WhatsAppLinkGenerator() {
                 <div className="space-y-2">
                   <Label className="text-xs sm:text-sm font-medium">Filter by Status</Label>
                   <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    value={state.filterStatus}
+                    onChange={(e) => updateState({ filterStatus: e.target.value })}
                     className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
                   >
                     <option value="all">All Status</option>
@@ -1171,49 +829,54 @@ export default function WhatsAppLinkGenerator() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-gray-600 gap-2">
                 <span>
                   {"Showing "}
-                  {filteredContacts.length}
+                  {paginatedContacts.contacts.length}
                   {" of "}
-                  {contacts.length}
-                  {" contacts"}
+                  {filteredContacts.length}
+                  {" contacts ("}
+                  {state.contacts.length}
+                  {" total)"}
                 </span>
-                {(searchTerm || filterCategory !== "all" || filterWebsite !== "all" || filterStatus !== "all") && (
-                  <span className="italic text-gray-500">{"Filters active"}</span>
-                )}
+                {(state.searchTerm ||
+                  state.filterCategory !== "all" ||
+                  state.filterWebsite !== "all" ||
+                  state.filterStatus !== "all") && <span className="italic text-gray-500">{"Filters active"}</span>}
               </div>
 
               {/* Batch Send Button */}
-              {filteredContacts.length > 0 && (
+              {paginatedContacts.contacts.length > 0 && (
                 <div className="mt-4 sm:mt-6 text-center">
-                  {isBatchSending ? (
+                  {state.isBatchSending ? (
                     <Button onClick={stopBatchSend} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto" size="lg">
                       <StopCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                       <span className="hidden sm:inline">
-                        Stop Sending ({currentBatchIndex}/{filteredContacts.length})
+                        Stop Sending ({state.currentBatchIndex}/{paginatedContacts.contacts.length})
                       </span>
                       <span className="sm:hidden">
-                        Stop ({currentBatchIndex}/{filteredContacts.length})
+                        Stop ({state.currentBatchIndex}/{paginatedContacts.contacts.length})
                       </span>
                     </Button>
                   ) : (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
-                          disabled={filteredContacts.length === 0}
+                          disabled={paginatedContacts.contacts.length === 0}
                           className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                           size="lg"
                         >
                           <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                          <span className="hidden sm:inline">Send All Filtered ({filteredContacts.length})</span>
-                          <span className="sm:hidden">Send All ({filteredContacts.length})</span>
+                          <span className="hidden sm:inline">
+                            Send Current Page ({paginatedContacts.contacts.length})
+                          </span>
+                          <span className="sm:hidden">Send Page ({paginatedContacts.contacts.length})</span>
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="mx-4 max-w-md sm:max-w-lg">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-base sm:text-lg">Confirm Batch Send</AlertDialogTitle>
                           <AlertDialogDescription className="text-xs sm:text-sm">
-                            This will open {filteredContacts.length} WhatsApp chats in new tabs, one by one, with a
-                            small delay. **Please ensure your browser allows pop-ups for this site, otherwise, the chats
-                            will not open.**
+                            This will open {paginatedContacts.contacts.length} WhatsApp chats from the current page in
+                            new tabs, one by one, with a small delay. **Please ensure your browser allows pop-ups for
+                            this site, otherwise, the chats will not open.**
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -1234,7 +897,7 @@ export default function WhatsAppLinkGenerator() {
           </Card>
         )}
 
-        {/* Results Section - Contact Cards */}
+        {/* Results Section - Contact Cards with Pagination */}
         {filteredContacts.length > 0 && (
           <Card className="shadow-lg">
             <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6">
@@ -1265,8 +928,8 @@ export default function WhatsAppLinkGenerator() {
                         Confirm Clear All Contacts
                       </AlertDialogTitle>
                       <AlertDialogDescription className="text-xs sm:text-sm">
-                        This action will permanently delete all {contacts.length} contacts from your storage and cannot
-                        be undone. Are you sure you want to proceed?
+                        This action will permanently delete all {state.contacts.length} contacts from your storage and
+                        cannot be undone. Are you sure you want to proceed?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -1280,21 +943,48 @@ export default function WhatsAppLinkGenerator() {
               </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
+              {/* Pagination Controls - Top */}
+              <div className="mb-6">
+                <Pagination
+                  currentPage={paginatedContacts.currentPage}
+                  totalPages={paginatedContacts.totalPages}
+                  totalItems={filteredContacts.length}
+                  itemsPerPage={state.itemsPerPage}
+                  onPageChange={(page) => updateState({ currentPage: page })}
+                  onItemsPerPageChange={(itemsPerPage) => updateState({ itemsPerPage, currentPage: 1 })}
+                />
+              </div>
+
+              {/* Contact Cards Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredContacts.map((contact, index) => (
+                {paginatedContacts.contacts.map((contact, index) => (
                   <ContactCard
                     key={contact.id}
                     contact={contact}
                     index={index}
-                    copiedIndex={copiedIndex}
+                    copiedIndex={state.copiedIndex}
                     onCopyToClipboard={copyToClipboard}
-                    onOpenWhatsApp={handleOpenWhatsApp}
-                    onUpdateStatus={handleUpdateContactStatus}
+                    onOpenWhatsApp={(contact) => WhatsAppService.openWhatsAppChat(contact.whatsappLink)}
+                    onUpdateStatus={(contact) => updateState({ selectedContact: contact })}
                     onDeleteContact={handleDeleteContact}
-                    formatPhoneDisplay={formatPhoneDisplay}
+                    formatPhoneDisplay={PhoneService.formatPhoneDisplay}
                   />
                 ))}
               </div>
+
+              {/* Pagination Controls - Bottom */}
+              {paginatedContacts.totalPages > 1 && (
+                <div className="mt-6">
+                  <Pagination
+                    currentPage={paginatedContacts.currentPage}
+                    totalPages={paginatedContacts.totalPages}
+                    totalItems={filteredContacts.length}
+                    itemsPerPage={state.itemsPerPage}
+                    onPageChange={(page) => updateState({ currentPage: page })}
+                    onItemsPerPageChange={(itemsPerPage) => updateState({ itemsPerPage, currentPage: 1 })}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
