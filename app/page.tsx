@@ -462,19 +462,34 @@ export default function WhatsAppLinkGenerator() {
     setContacts(updatedContacts)
   }
 
-  const clearAll = () => {
-    setContacts([])
-    setCustomMessage("")
-    setSelectedTemplate(null)
-    setFileError("")
-    setManualPhoneNumber("")
-    setManualLink("")
-    setManualLinkCopied(false)
-    setManualPhoneError("")
-    setIsBatchSending(false)
-    setCurrentBatchIndex(0)
-    if (batchSendTimeoutRef.current) {
-      clearTimeout(batchSendTimeoutRef.current)
+  const clearAll = async () => {
+    try {
+      // Clear from storage first
+      const result = await clearAllContacts()
+
+      if (result.success) {
+        // Clear local state
+        setContacts([])
+        setCustomMessage("")
+        setSelectedTemplate(null)
+        setFileError("")
+        setManualPhoneNumber("")
+        setManualLink("")
+        setManualLinkCopied(false)
+        setManualPhoneError("")
+        setIsBatchSending(false)
+        setCurrentBatchIndex(0)
+        if (batchSendTimeoutRef.current) {
+          clearTimeout(batchSendTimeoutRef.current)
+        }
+
+        toast.success("All contacts cleared successfully")
+      } else {
+        toast.error(result.message || "Failed to clear contacts")
+      }
+    } catch (error) {
+      console.error("Error clearing contacts:", error)
+      toast.error("Failed to clear contacts")
     }
   }
 
@@ -1233,14 +1248,35 @@ export default function WhatsAppLinkGenerator() {
                     {filteredContacts.length} business contacts ready for messaging
                   </CardDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={clearAll}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 bg-transparent w-full sm:w-auto"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 bg-transparent w-full sm:w-auto"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="mx-4 max-w-md sm:max-w-lg">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-base sm:text-lg flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        Confirm Clear All Contacts
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-xs sm:text-sm">
+                        This action will permanently delete all {contacts.length} contacts from your storage and cannot
+                        be undone. Are you sure you want to proceed?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={clearAll} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                        Yes, Clear All Contacts
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
