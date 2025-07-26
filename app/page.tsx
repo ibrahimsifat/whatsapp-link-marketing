@@ -1,12 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Upload,
   MessageCircle,
@@ -27,6 +29,9 @@ import {
   EyeOff,
   FileSpreadsheet,
   Plus,
+  Download,
+  BarChart3,
+  X,
 } from "lucide-react"
 import {
   AlertDialog,
@@ -47,6 +52,7 @@ import { ContactManagement } from "./components/contact-management"
 import { ContactCard } from "./components/contact-card"
 import { GoogleSheetsImport } from "./components/google-sheets-import"
 import { Pagination } from "./components/pagination"
+import { AdvancedSearch, type SearchCriteria } from "./components/advanced-search"
 
 // Hooks
 import { useContactStorage } from "./hooks/use-contact-storage"
@@ -59,6 +65,7 @@ import { WhatsAppService } from "./services/whatsapp-service"
 import { TemplateService } from "./services/template-service"
 import { ContactFilterService } from "./services/contact-filter-service"
 import { BatchSendService } from "./services/batch-send-service"
+import { AdvancedSearchService } from "./services/advanced-search-service"
 
 // Utils
 import { ClipboardUtils } from "./utils/clipboard-utils"
@@ -73,6 +80,10 @@ import type { Contact, MessageTemplate } from "./types/contact"
 export default function WhatsAppLinkGenerator() {
   const { state, updateState, resetState, resetPagination } = useAppState()
   const batchSendTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Advanced search state
+  const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({})
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([])
 
   // Contact storage hook
   const {
@@ -96,7 +107,7 @@ export default function WhatsAppLinkGenerator() {
   // Reset pagination when filters change
   useEffect(() => {
     resetPagination()
-  }, [state.filterCategory, state.filterWebsite, state.filterStatus, state.searchTerm, resetPagination])
+  }, [searchCriteria, resetPagination])
 
   // File handling
   const handleDrag = (e: React.DragEvent) => {
@@ -212,6 +223,7 @@ export default function WhatsAppLinkGenerator() {
 
       if (result.success) {
         resetState()
+        setSelectedContacts([])
         if (batchSendTimeoutRef.current) {
           clearTimeout(batchSendTimeoutRef.current)
         }
@@ -237,6 +249,7 @@ export default function WhatsAppLinkGenerator() {
     if (result.success) {
       const updatedCurrentContacts = state.contacts.filter((c) => c.id !== contactId)
       updateState({ contacts: updatedCurrentContacts })
+      setSelectedContacts((prev) => prev.filter((c) => c.id !== contactId))
       ToastUtils.success("Contact deleted successfully")
     } else {
       ToastUtils.error("Failed to delete contact")
@@ -294,16 +307,72 @@ export default function WhatsAppLinkGenerator() {
     }
   }
 
-  // Clipboard operations
-  const copyToClipboard = async (text: string, index: number) => {
-    const success = await ClipboardUtils.copyToClipboard(text)
-    if (success) {
-      updateState({ copiedIndex: index })
-      setTimeout(() => updateState({ copiedIndex: null }), 2000)
-      ToastUtils.success("Link copied to clipboard!")
+  // Advanced search handling
+  const handleAdvancedSearch = (criteria: SearchCriteria) => {
+    setSearchCriteria(criteria)
+    resetPagination()
+  }
+
+  const handleClearSearch = () => {
+    setSearchCriteria({})
+    resetPagination()
+  }
+
+  // Selection handling
+  const toggleContactSelection = (contact: Contact) => {
+    setSelectedContacts((prev) => {
+      const isSelected = prev.some((c) => c.id === contact.id)
+      if (isSelected) {
+        return prev.filter((c) => c.id !== contact.id)
+      } else {
+        return [...prev, contact]
+      }
+    })
+  }
+
+  const selectAllVisible = () => {
+    const allSelected = paginatedContacts.contacts.every((contact) =>
+      selectedContacts.some((selected) => selected.id === contact.id),
+    )
+
+    if (allSelected) {
+      // Deselect all visible
+      setSelectedContacts((prev) =>
+        prev.filter((selected) => !paginatedContacts.contacts.some((contact) => contact.id === selected.id)),
+      )
     } else {
-      ToastUtils.error("Failed to copy link")
+      // Select all visible
+      const newSelections = paginatedContacts.contacts.filter(
+        (contact) => !selectedContacts.some((selected) => selected.id === contact.id),
+      )
+      setSelectedContacts((prev) => [...prev, ...newSelections])
     }
+  }
+
+  const clearSelection = () => {
+    setSelectedContacts([])
+  }
+
+  // Batch operations
+  const handleBulkDelete = async () => {
+    if (selectedContacts.length === 0) return
+
+    for (const contact of selectedContacts) {
+      await handleDeleteContact(contact.id)
+    }
+    clearSelection()
+  }
+
+  const handleBulkExport = () => {
+    if (selectedContacts.length === 0) {
+      ToastUtils.warning("No contacts selected")
+      return
+    }
+
+    const csvContent = FileService.exportContacts(selectedContacts, "csv")
+    const filename = `selected-contacts-${new Date().toISOString().split("T")[0]}.csv`
+    FileService.downloadFile(csvContent, filename, "text/csv")
+    ToastUtils.success(`Exported ${selectedContacts.length} selected contacts`)
   }
 
   // Batch sending
@@ -335,19 +404,16 @@ export default function WhatsAppLinkGenerator() {
 
   // Computed values
   const filteredContacts = useMemo(() => {
-    return ContactFilterService.filterContacts(state.contacts, {
-      category: state.filterCategory,
-      website: state.filterWebsite,
-      status: state.filterStatus,
-      searchTerm: state.searchTerm,
-    })
-  }, [state.contacts, state.filterCategory, state.filterWebsite, state.filterStatus, state.searchTerm])
+    return AdvancedSearchService.searchContacts(state.contacts, searchCriteria)
+  }, [state.contacts, searchCriteria])
 
   const paginatedContacts = useMemo(() => {
     return ContactFilterService.paginateContacts(filteredContacts, state.currentPage, state.itemsPerPage)
   }, [filteredContacts, state.currentPage, state.itemsPerPage])
 
-  const categories = ContactFilterService.getUniqueCategories(state.contacts)
+  const categories = AdvancedSearchService.getUniqueCategories(state.contacts)
+  const sources = AdvancedSearchService.getUniqueSources(state.contacts)
+  const customFields = AdvancedSearchService.getCustomFields(state.contacts)
   const websiteStats = ContactFilterService.getWebsiteStats(state.contacts)
   const availableCustomVariables = TemplateService.extractCustomVariables(state.contacts)
 
@@ -395,7 +461,7 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Tabbed Interface */}
         <Tabs defaultValue="upload" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Upload File</span>
@@ -410,6 +476,11 @@ export default function WhatsAppLinkGenerator() {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Manual Entry</span>
               <span className="sm:hidden">Manual</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Advanced Search</span>
+              <span className="sm:hidden">Search</span>
             </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
@@ -655,6 +726,19 @@ export default function WhatsAppLinkGenerator() {
             </Card>
           </TabsContent>
 
+          {/* Advanced Search Tab */}
+          <TabsContent value="search">
+            <AdvancedSearch
+              contacts={state.contacts}
+              onSearch={handleAdvancedSearch}
+              onClearSearch={handleClearSearch}
+              currentCriteria={searchCriteria}
+              categories={categories}
+              sources={sources}
+              customFields={customFields}
+            />
+          </TabsContent>
+
           {/* Templates Tab */}
           <TabsContent value="templates">
             <MessageTemplates
@@ -738,113 +822,137 @@ export default function WhatsAppLinkGenerator() {
           </Card>
         )}
 
-        {/* Statistics and Filters */}
+        {/* Statistics and Bulk Actions */}
         {state.contacts.length > 0 && (
           <Card className="shadow-lg">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6">
               <CardTitle className="flex items-center gap-2 text-purple-800 text-lg sm:text-xl">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
                 Business Contacts Overview
+                {Object.keys(searchCriteria).length > 0 && (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                    Filtered
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="bg-blue-50 p-3 sm:p-4 rounded-lg text-center">
-                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{websiteStats.total}</div>
-                  <div className="text-xs sm:text-sm text-blue-500">Total Contacts</div>
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{filteredContacts.length}</div>
+                  <div className="text-xs sm:text-sm text-blue-500">
+                    {Object.keys(searchCriteria).length > 0 ? "Filtered" : "Total"} Contacts
+                  </div>
                 </div>
                 <div className="bg-green-50 p-3 sm:p-4 rounded-lg text-center">
-                  <div className="text-lg sm:text-2xl font-bold text-green-600">{websiteStats.withWebsite}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-green-600">
+                    {filteredContacts.filter((c) => c.hasWebsite).length}
+                  </div>
                   <div className="text-xs sm:text-sm text-green-500">With Website</div>
                 </div>
                 <div className="bg-orange-50 p-3 sm:p-4 rounded-lg text-center">
-                  <div className="text-lg sm:text-2xl font-bold text-orange-600">{websiteStats.noWebsite}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-orange-600">
+                    {filteredContacts.filter((c) => !c.hasWebsite).length}
+                  </div>
                   <div className="text-xs sm:text-sm text-orange-500">No Website</div>
                 </div>
                 <div className="bg-purple-50 p-3 sm:p-4 rounded-lg text-center">
-                  <div className="text-lg sm:text-2xl font-bold text-purple-600">{categories.length}</div>
-                  <div className="text-xs sm:text-sm text-purple-500">Categories</div>
+                  <div className="text-lg sm:text-2xl font-bold text-purple-600">{selectedContacts.length}</div>
+                  <div className="text-xs sm:text-sm text-purple-500">Selected</div>
                 </div>
               </div>
 
-              {/* Search and Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm font-medium">Search Contacts</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
-                    <Input
-                      value={state.searchTerm}
-                      onChange={(e) => updateState({ searchTerm: e.target.value })}
-                      placeholder="Search by name, category, phone..."
-                      className="pl-8 sm:pl-10 text-xs sm:text-sm"
+              {/* Bulk Actions */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={
+                        paginatedContacts.contacts.length > 0 &&
+                        paginatedContacts.contacts.every((contact) =>
+                          selectedContacts.some((selected) => selected.id === contact.id),
+                        )
+                      }
+                      onCheckedChange={selectAllVisible}
                     />
+                    <span className="text-sm text-gray-600">Select All ({paginatedContacts.contacts.length})</span>
                   </div>
+                  {selectedContacts.length > 0 && <Badge variant="secondary">{selectedContacts.length} selected</Badge>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm font-medium">Filter by Category</Label>
-                  <select
-                    value={state.filterCategory}
-                    onChange={(e) => updateState({ filterCategory: e.target.value })}
-                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm font-medium">Filter by Website</Label>
-                  <select
-                    value={state.filterWebsite}
-                    onChange={(e) => updateState({ filterWebsite: e.target.value })}
-                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
-                  >
-                    <option value="all">All Contacts</option>
-                    <option value="with_website">With Website</option>
-                    <option value="no_website">No Website</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs sm:text-sm font-medium">Filter by Status</Label>
-                  <select
-                    value={state.filterStatus}
-                    onChange={(e) => updateState({ filterStatus: e.target.value })}
-                    className="w-full px-2 sm:px-3 py-2 border rounded-md bg-white text-xs sm:text-sm"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="sent">Sent</option>
-                    <option value="not_sent">Not Sent</option>
-                  </select>
+                <div className="flex flex-wrap gap-2">
+                  {selectedContacts.length > 0 && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBulkExport}
+                        className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Selected
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearSelection}
+                        className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                      >
+                        Clear Selection
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Selected
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Selected Contacts</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {selectedContacts.length} selected contacts? This action
+                              cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+                              Delete {selectedContacts.length} Contacts
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-gray-600 gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-gray-600 gap-2 mb-4">
                 <span>
                   {"Showing "}
                   {paginatedContacts.contacts.length}
                   {" of "}
                   {filteredContacts.length}
-                  {" contacts ("}
-                  {state.contacts.length}
-                  {" total)"}
+                  {" contacts"}
+                  {Object.keys(searchCriteria).length > 0 && " (filtered)"}
                 </span>
-                {(state.searchTerm ||
-                  state.filterCategory !== "all" ||
-                  state.filterWebsite !== "all" ||
-                  state.filterStatus !== "all") && <span className="italic text-gray-500">{"Filters active"}</span>}
+                {Object.keys(searchCriteria).length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSearch}
+                    className="text-purple-600 hover:text-purple-700"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear Filters
+                  </Button>
+                )}
               </div>
 
               {/* Batch Send Button */}
               {paginatedContacts.contacts.length > 0 && (
-                <div className="mt-4 sm:mt-6 text-center">
+                <div className="text-center">
                   {state.isBatchSending ? (
                     <Button onClick={stopBatchSend} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto" size="lg">
                       <StopCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
@@ -906,9 +1014,12 @@ export default function WhatsAppLinkGenerator() {
                   <CardTitle className="flex items-center gap-2 text-green-800 text-lg sm:text-xl">
                     <Building className="h-5 w-5 sm:h-6 sm:w-6" />
                     Business WhatsApp Links
+                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                      {filteredContacts.length} contacts
+                    </Badge>
                   </CardTitle>
                   <CardDescription className="text-green-600 text-xs sm:text-sm">
-                    {filteredContacts.length} business contacts ready for messaging
+                    Professional contact cards with horizontal layout for better readability
                   </CardDescription>
                 </div>
                 <AlertDialog>
@@ -955,19 +1066,29 @@ export default function WhatsAppLinkGenerator() {
                 />
               </div>
 
-              {/* Contact Cards Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {/* Contact Cards - Horizontal Layout */}
+              <div className="space-y-4">
                 {paginatedContacts.contacts.map((contact, index) => (
                   <ContactCard
                     key={contact.id}
                     contact={contact}
-                    index={index}
-                    copiedIndex={state.copiedIndex}
-                    onCopyToClipboard={copyToClipboard}
-                    onOpenWhatsApp={(contact) => WhatsAppService.openWhatsAppChat(contact.whatsappLink)}
-                    onUpdateStatus={(contact) => updateState({ selectedContact: contact })}
-                    onDeleteContact={handleDeleteContact}
-                    formatPhoneDisplay={PhoneService.formatPhoneDisplay}
+                    index={(paginatedContacts.currentPage - 1) * state.itemsPerPage + index}
+                    isSelected={selectedContacts.some((c) => c.id === contact.id)}
+                    onToggleSelect={() => toggleContactSelection(contact)}
+                    onUpdate={(updatedContact) => {
+                      const updatedContacts = state.contacts.map((c) =>
+                        c.id === updatedContact.id ? updatedContact : c,
+                      )
+                      updateState({ contacts: updatedContacts })
+                    }}
+                    onDelete={() => handleDeleteContact(contact.id)}
+                    onShowToast={(message, type) => {
+                      if (type === "error") {
+                        ToastUtils.error(message)
+                      } else {
+                        ToastUtils.success(message)
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -1005,8 +1126,8 @@ export default function WhatsAppLinkGenerator() {
                   Phone, Company Name, Category, Website, and any custom columns you add!
                 </p>
 
-                <p className="font-semibold text-sm sm:text-base">🏷️ Smart Categorization:</p>
-                <p className="text-xs sm:text-sm">Auto-categorizes "No Website" companies</p>
+                <p className="font-semibold text-sm sm:text-base">🔍 Advanced Search:</p>
+                <p className="text-xs sm:text-sm">Use multiple criteria and save your search queries</p>
               </div>
               <div className="space-y-2">
                 <p className="font-semibold text-sm sm:text-base">📝 Template Variables:</p>
@@ -1015,8 +1136,8 @@ export default function WhatsAppLinkGenerator() {
                   {"{contactPerson}"}
                 </p>
 
-                <p className="font-semibold text-sm sm:text-base">🎯 Targeted Messaging:</p>
-                <p className="text-xs sm:text-sm">Different templates for companies with/without websites</p>
+                <p className="font-semibold text-sm sm:text-base">✅ Bulk Operations:</p>
+                <p className="text-xs sm:text-sm">Select multiple contacts for bulk export or deletion</p>
               </div>
             </div>
           </CardContent>
