@@ -28,6 +28,7 @@ import { AppHeader } from "./components/app-header"
 import { UploadSection } from "./components/upload-section"
 import { ManualEntrySection } from "./components/manual-entry-section"
 import { StatisticsSection } from "./components/statistics-section"
+import { BulkMessageSender } from "./components/bulk-message-sender"
 
 // Hooks
 import { useContactStorage } from "./hooks/use-contact-storage"
@@ -395,6 +396,31 @@ export default function WhatsAppLinkGenerator() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Bulk Message Sender */}
+        {state.contacts.length > 0 && (
+          <div className="flex justify-center">
+            <BulkMessageSender
+              contacts={state.contacts}
+              selectedContacts={selectedContacts}
+              templates={state.templates}
+              selectedTemplate={state.selectedTemplate}
+              customMessage={state.customMessage}
+              onContactStatusUpdate={updateContactStatus}
+              onShowToast={(message, type) => {
+                if (type === "error") {
+                  ToastUtils.error(message)
+                } else if (type === "warning") {
+                  ToastUtils.warning(message)
+                } else if (type === "info") {
+                  ToastUtils.info(message)
+                } else {
+                  ToastUtils.success(message)
+                }
+              }}
+            />
+          </div>
         )}
 
         {/* Enhanced Statistics and Bulk Actions */}
