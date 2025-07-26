@@ -70,6 +70,7 @@ export function BulkMessageSender({
   const targetContacts = selectedContacts.length > 0 ? selectedContacts : contacts.filter((c) => c.status !== "sent")
   const validation = EnhancedBulkMessageService.validateContacts(targetContacts)
   const rateLimitStatus = EnhancedBulkMessageService.getRateLimitStatus()
+  const businessHoursStatus = EnhancedBulkMessageService.getBusinessHoursStatus()
 
   // Generate preview message
   const generatePreview = useCallback(() => {
@@ -104,6 +105,22 @@ export function BulkMessageSender({
       return
     }
 
+    // Check business hours and show warning if needed
+    let proceedWithSend = true
+
+    if (settings.respectBusinessHours && !businessHoursStatus.isWithinHours) {
+      const businessHoursWarning = businessHoursStatus.isWeekend
+        ? `⏰ WEEKEND DETECTED\n\nIt's currently ${new Date().toLocaleString()}.\nBusiness hours are ${settings.businessHoursStart}:00 - ${settings.businessHoursEnd}:00 on weekdays.\n\nNext business hours: ${businessHoursStatus.nextBusinessHour}\n\nDo you want to proceed anyway?`
+        : `⏰ OUTSIDE BUSINESS HOURS\n\nCurrent time: ${new Date().toLocaleTimeString()}\nBusiness hours: ${settings.businessHoursStart}:00 - ${settings.businessHoursEnd}:00\n\nNext business hours: ${businessHoursStatus.nextBusinessHour}\n\nDo you want to proceed anyway?`
+
+      proceedWithSend = window.confirm(businessHoursWarning)
+    }
+
+    if (!proceedWithSend) {
+      onShowToast("Bulk sending cancelled - outside business hours", "info")
+      return
+    }
+
     // Show comprehensive warning
     const confirmed = window.confirm(
       `⚠️ PROFESSIONAL WHATSAPP BULK MESSAGING ⚠️\n\n` +
@@ -112,7 +129,7 @@ export function BulkMessageSender({
         `• Smart delays: ${settings.delayBetweenMessages / 1000}s base + randomization\n` +
         `• Rate limiting: Max ${settings.maxMessagesPerHour}/hour, ${settings.maxMessagesPerDay}/day\n` +
         `• Batch processing: ${settings.batchSize} messages per batch\n` +
-        `• Business hours: ${settings.respectBusinessHours ? "ENABLED" : "DISABLED"}\n` +
+        `• Business hours: ${settings.respectBusinessHours ? (businessHoursStatus.isWithinHours ? "WITHIN HOURS" : "OVERRIDE ACTIVE") : "DISABLED"}\n` +
         `• Anti-spam mode: ${settings.enableAntiSpamMode ? "ENABLED" : "DISABLED"}\n` +
         `• Human behavior: ${settings.humanLikeBehavior ? "ENABLED" : "DISABLED"}\n\n` +
         `📱 Each message opens in WhatsApp Web - you must manually click 'Send'.\n` +
@@ -236,6 +253,20 @@ export function BulkMessageSender({
                 </AlertDescription>
               </Alert>
 
+              {settings.respectBusinessHours && !businessHoursStatus.isWithinHours && (
+                <Alert className="border-orange-200 bg-orange-50">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    <strong>Outside Business Hours:</strong>{" "}
+                    {businessHoursStatus.isWeekend
+                      ? "It's currently weekend."
+                      : `Current time is ${businessHoursStatus.currentHour}:00.`}{" "}
+                    Business hours are {settings.businessHoursStart}:00 - {settings.businessHoursEnd}:00 on weekdays.
+                    You can still send messages, but they may be less effective.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Rate Limit Status */}
               <Card>
                 <CardHeader>
@@ -264,9 +295,18 @@ export function BulkMessageSender({
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {rateLimitStatus.withinBusinessHours ? "✓" : "✗"}
+                        {businessHoursStatus.isWithinHours ? "✓" : "⚠️"}
                       </div>
-                      <div className="text-sm text-green-600">Business Hours</div>
+                      <div className="text-sm text-green-600">
+                        {businessHoursStatus.isWeekend
+                          ? "Weekend"
+                          : businessHoursStatus.isWithinHours
+                            ? "Business Hours"
+                            : "After Hours"}
+                      </div>
+                      {!businessHoursStatus.isWithinHours && settings.respectBusinessHours && (
+                        <div className="text-xs text-orange-600 mt-1">Next: {businessHoursStatus.nextBusinessHour}</div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

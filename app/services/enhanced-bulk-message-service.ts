@@ -186,6 +186,11 @@ class EnhancedBulkMessageServiceClass {
 
     const now = new Date()
     const hour = now.getHours()
+    const day = now.getDay() // 0 = Sunday, 6 = Saturday
+
+    // Skip weekends if business hours are enabled
+    if (day === 0 || day === 6) return false
+
     return hour >= this.settings.businessHoursStart && hour < this.settings.businessHoursEnd
   }
 
@@ -244,9 +249,10 @@ class EnhancedBulkMessageServiceClass {
       throw new Error("Rate limit reached. Please wait before sending more messages.")
     }
 
-    // Check business hours
+    // Check business hours - but allow override
     if (!this.isWithinBusinessHours()) {
-      throw new Error("Outside business hours. Messages will be sent during business hours.")
+      // Don't throw error, just warn and continue if user confirms
+      console.warn("Outside business hours, but proceeding as requested by user")
     }
 
     // Initialize state
@@ -577,6 +583,50 @@ class EnhancedBulkMessageServiceClass {
     this.currentBatch = 0
     this.totalDelayUsed = 0
     this.saveRateLimitData()
+  }
+
+  getBusinessHoursStatus(): {
+    isWithinHours: boolean
+    currentHour: number
+    businessStart: number
+    businessEnd: number
+    isWeekend: boolean
+    nextBusinessHour: string
+  } {
+    const now = new Date()
+    const hour = now.getHours()
+    const day = now.getDay()
+    const isWeekend = day === 0 || day === 6
+
+    let nextBusinessHour = "Now"
+
+    if (!this.isWithinBusinessHours()) {
+      if (isWeekend) {
+        const daysUntilMonday = day === 0 ? 1 : 7 - day + 1
+        const monday = new Date(now)
+        monday.setDate(monday.getDate() + daysUntilMonday)
+        monday.setHours(this.settings.businessHoursStart, 0, 0, 0)
+        nextBusinessHour = monday.toLocaleString()
+      } else if (hour < this.settings.businessHoursStart) {
+        const today = new Date(now)
+        today.setHours(this.settings.businessHoursStart, 0, 0, 0)
+        nextBusinessHour = today.toLocaleTimeString()
+      } else {
+        const tomorrow = new Date(now)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(this.settings.businessHoursStart, 0, 0, 0)
+        nextBusinessHour = tomorrow.toLocaleString()
+      }
+    }
+
+    return {
+      isWithinHours: this.isWithinBusinessHours(),
+      currentHour: hour,
+      businessStart: this.settings.businessHoursStart,
+      businessEnd: this.settings.businessHoursEnd,
+      isWeekend,
+      nextBusinessHour,
+    }
   }
 }
 
