@@ -5,49 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Search, Filter, Save, Trash2, X, Calendar, Building, Globe, Phone, User, Clock, Sparkles } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, Filter, X, Calendar, Building, Globe, Tag, Users, Save, Trash2, Eye } from "lucide-react"
 import type { Contact } from "../types/contact"
 
 export interface SearchCriteria {
-  id?: string
-  name?: string
   searchTerm?: string
-  companyName?: string
-  companyCategory?: string
-  hasWebsite?: boolean | "all"
-  status?: string
+  category?: string
+  hasWebsite?: boolean
+  status?: Contact["status"]
   source?: string
-  phonePattern?: string
-  dateFrom?: string
-  dateTo?: string
+  dateRange?: {
+    start: string
+    end: string
+  }
   customFields?: Record<string, string>
-}
-
-export interface SavedSearch {
-  id: string
-  name: string
-  criteria: SearchCriteria
-  createdAt: string
-  lastUsed: string
-  useCount: number
 }
 
 interface AdvancedSearchProps {
@@ -70,9 +44,7 @@ export function AdvancedSearch({
   customFields,
 }: AdvancedSearchProps) {
   const [criteria, setCriteria] = useState<SearchCriteria>(currentCriteria)
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [saveSearchName, setSaveSearchName] = useState("")
+  const [savedSearches, setSavedSearches] = useState<Array<{ name: string; criteria: SearchCriteria }>>([])
 
   // Load saved searches from localStorage
   useEffect(() => {
@@ -87,14 +59,9 @@ export function AdvancedSearch({
   }, [])
 
   // Save searches to localStorage
-  const saveSavedSearches = (searches: SavedSearch[]) => {
-    setSavedSearches(searches)
+  const saveCriteriaToStorage = (searches: Array<{ name: string; criteria: SearchCriteria }>) => {
     localStorage.setItem("whatsapp-saved-searches", JSON.stringify(searches))
-  }
-
-  const updateCriteria = (updates: Partial<SearchCriteria>) => {
-    const newCriteria = { ...criteria, ...updates }
-    setCriteria(newCriteria)
+    setSavedSearches(searches)
   }
 
   const handleSearch = () => {
@@ -102,328 +69,224 @@ export function AdvancedSearch({
   }
 
   const handleClear = () => {
-    const emptyCriteria: SearchCriteria = {}
-    setCriteria(emptyCriteria)
+    setCriteria({})
     onClearSearch()
   }
 
-  const saveCurrentSearch = () => {
-    if (!saveSearchName.trim()) return
-
-    const newSearch: SavedSearch = {
-      id: `search-${Date.now()}`,
-      name: saveSearchName.trim(),
-      criteria: { ...criteria },
-      createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString(),
-      useCount: 1,
+  const handleSaveSearch = () => {
+    const name = prompt("Enter a name for this search:")
+    if (name && name.trim()) {
+      const newSearches = [...savedSearches, { name: name.trim(), criteria }]
+      saveCriteriaToStorage(newSearches)
     }
-
-    const updatedSearches = [newSearch, ...savedSearches].slice(0, 10) // Keep only 10 most recent
-    saveSavedSearches(updatedSearches)
-    setSaveSearchName("")
-    setIsDialogOpen(false)
   }
 
-  const loadSavedSearch = (search: SavedSearch) => {
-    setCriteria(search.criteria)
-    onSearch(search.criteria)
-
-    // Update usage stats
-    const updatedSearches = savedSearches.map((s) =>
-      s.id === search.id ? { ...s, lastUsed: new Date().toISOString(), useCount: s.useCount + 1 } : s,
-    )
-    saveSavedSearches(updatedSearches)
+  const handleLoadSearch = (savedCriteria: SearchCriteria) => {
+    setCriteria(savedCriteria)
+    onSearch(savedCriteria)
   }
 
-  const deleteSavedSearch = (searchId: string) => {
-    const updatedSearches = savedSearches.filter((s) => s.id !== searchId)
-    saveSavedSearches(updatedSearches)
+  const handleDeleteSavedSearch = (index: number) => {
+    const newSearches = savedSearches.filter((_, i) => i !== index)
+    saveCriteriaToStorage(newSearches)
+  }
+
+  const updateCustomField = (field: string, value: string) => {
+    setCriteria({
+      ...criteria,
+      customFields: {
+        ...criteria.customFields,
+        [field]: value,
+      },
+    })
+  }
+
+  const removeCustomField = (field: string) => {
+    const newCustomFields = { ...criteria.customFields }
+    delete newCustomFields[field]
+    setCriteria({
+      ...criteria,
+      customFields: Object.keys(newCustomFields).length > 0 ? newCustomFields : undefined,
+    })
   }
 
   const getActiveFiltersCount = () => {
-    return Object.values(criteria).filter((value) => value !== undefined && value !== "" && value !== "all").length
+    let count = 0
+    if (criteria.searchTerm) count++
+    if (criteria.category) count++
+    if (criteria.hasWebsite !== undefined) count++
+    if (criteria.status) count++
+    if (criteria.source) count++
+    if (criteria.dateRange) count++
+    if (criteria.customFields) count += Object.keys(criteria.customFields).length
+    return count
   }
-
-  const hasActiveFilters = getActiveFiltersCount() > 0
 
   return (
     <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-      <CardHeader className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-t-lg border-b border-slate-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-3 text-slate-800 text-xl">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Search className="h-5 w-5 text-purple-600" />
-              </div>
-              Advanced Search
-              {hasActiveFilters && (
-                <Badge className="bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border-purple-200 shadow-sm">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  {getActiveFiltersCount()} active
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription className="text-slate-600">
-              Search contacts with multiple criteria and save your queries
-            </CardDescription>
+      <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg border-b border-slate-100">
+        <CardTitle className="flex items-center gap-3 text-slate-800 text-xl">
+          <div className="p-2 bg-indigo-100 rounded-lg">
+            <Search className="h-5 w-5 text-indigo-600" />
           </div>
-          <div className="flex items-center gap-3">
-            {savedSearches.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-purple-200 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md"
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Saved ({savedSearches.length})
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-white/95 backdrop-blur-sm">
-                  {savedSearches.map((search) => (
-                    <div key={search.id}>
-                      <div className="flex items-center justify-between p-2">
-                        <div className="flex-1 min-w-0">
-                          <button
-                            onClick={() => loadSavedSearch(search)}
-                            className="text-left w-full hover:bg-slate-50 p-2 rounded transition-colors"
-                          >
-                            <div className="font-medium text-sm truncate">{search.name}</div>
-                            <div className="text-xs text-slate-500">Used {search.useCount} times</div>
-                          </button>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteSavedSearch(search.id)}
-                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <DropdownMenuSeparator />
-                    </div>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-purple-200 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md"
-                  disabled={!hasActiveFilters}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Search
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-white/95 backdrop-blur-sm">
-                <DialogHeader>
-                  <DialogTitle>Save Search Query</DialogTitle>
-                  <DialogDescription>Give your search query a name to save it for later use.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="search-name">Search Name</Label>
-                    <Input
-                      id="search-name"
-                      value={saveSearchName}
-                      onChange={(e) => setSaveSearchName(e.target.value)}
-                      placeholder="e.g., Companies with websites in Riyadh"
-                      className="bg-white/80"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveCurrentSearch}
-                    disabled={!saveSearchName.trim()}
-                    className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
-                  >
-                    Save Search
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+          Advanced Search & Filters
+          {getActiveFiltersCount() > 0 && (
+            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">{getActiveFiltersCount()} active</Badge>
+          )}
+        </CardTitle>
+        <CardDescription className="text-slate-600">
+          Use multiple criteria to find specific contacts in your database
+        </CardDescription>
       </CardHeader>
-      <CardContent className="p-8 space-y-8">
+      <CardContent className="p-8 space-y-6">
         {/* Basic Search */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2 text-slate-700 font-medium">
-              <Search className="h-4 w-4" />
-              General Search
-            </Label>
-            <Input
-              value={criteria.searchTerm || ""}
-              onChange={(e) => updateCriteria({ searchTerm: e.target.value })}
-              placeholder="Search in all fields..."
-              className="h-12 bg-white/80 border-slate-200"
-            />
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Search className="h-4 w-4 text-slate-600" />
+            <Label className="text-sm font-medium text-slate-700">Text Search</Label>
           </div>
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2 text-slate-700 font-medium">
-              <Phone className="h-4 w-4" />
-              Phone Pattern
-            </Label>
-            <Input
-              value={criteria.phonePattern || ""}
-              onChange={(e) => updateCriteria({ phonePattern: e.target.value })}
-              placeholder="e.g., 055, +966, 1234"
-              className="h-12 bg-white/80 border-slate-200"
-            />
-          </div>
+          <Input
+            placeholder="Search by company name, phone number, or website..."
+            value={criteria.searchTerm || ""}
+            onChange={(e) => setCriteria({ ...criteria, searchTerm: e.target.value })}
+            className="h-12 text-base bg-white/80"
+          />
         </div>
 
-        <Separator className="bg-slate-200" />
+        <Separator />
 
-        {/* Company Filters */}
-        <div className="space-y-6">
-          <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Building className="h-4 w-4 text-blue-600" />
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Category Filter */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Building className="h-4 w-4 text-slate-600" />
+              <Label className="text-sm font-medium text-slate-700">Category</Label>
             </div>
-            Company Information
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">Company Name</Label>
+            <Select
+              value={criteria.category || "all"}
+              onValueChange={(value) => setCriteria({ ...criteria, category: value === "all" ? undefined : value })}
+            >
+              <SelectTrigger className="bg-white/80">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Website Filter */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-slate-600" />
+              <Label className="text-sm font-medium text-slate-700">Website</Label>
+            </div>
+            <Select
+              value={criteria.hasWebsite === undefined ? "any" : criteria.hasWebsite.toString()}
+              onValueChange={(value) =>
+                setCriteria({
+                  ...criteria,
+                  hasWebsite: value === "any" ? undefined : value === "true",
+                })
+              }
+            >
+              <SelectTrigger className="bg-white/80">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any</SelectItem>
+                <SelectItem value="true">Has Website</SelectItem>
+                <SelectItem value="false">No Website</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-slate-600" />
+              <Label className="text-sm font-medium text-slate-700">Status</Label>
+            </div>
+            <Select
+              value={criteria.status || "any"}
+              onValueChange={(value) => setCriteria({ ...criteria, status: (value as Contact["status"]) || undefined })}
+            >
+              <SelectTrigger className="bg-white/80">
+                <SelectValue placeholder="Any status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="not_sent">Not Sent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Source Filter */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-slate-600" />
+              <Label className="text-sm font-medium text-slate-700">Source</Label>
+            </div>
+            <Select
+              value={criteria.source || "any"}
+              onValueChange={(value) => setCriteria({ ...criteria, source: value === "any" ? undefined : value })}
+            >
+              <SelectTrigger className="bg-white/80">
+                <SelectValue placeholder="Any source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any source</SelectItem>
+                {sources.map((source) => (
+                  <SelectItem key={source} value={source}>
+                    {source}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-slate-600" />
+              <Label className="text-sm font-medium text-slate-700">Date Range</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <Input
-                value={criteria.companyName || ""}
-                onChange={(e) => updateCriteria({ companyName: e.target.value })}
-                placeholder="Search company names..."
-                className="h-12 bg-white/80 border-slate-200"
-              />
-            </div>
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">Category</Label>
-              <Select
-                value={criteria.companyCategory || "all"}
-                onValueChange={(value) => updateCriteria({ companyCategory: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger className="h-12 bg-white/80 border-slate-200">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm">
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-slate-700 font-medium">
-                <Globe className="h-4 w-4" />
-                Website
-              </Label>
-              <Select
-                value={criteria.hasWebsite === undefined ? "all" : criteria.hasWebsite.toString()}
-                onValueChange={(value) =>
-                  updateCriteria({ hasWebsite: value === "all" ? undefined : value === "true" })
+                type="date"
+                value={criteria.dateRange?.start || ""}
+                onChange={(e) =>
+                  setCriteria({
+                    ...criteria,
+                    dateRange: {
+                      start: e.target.value,
+                      end: criteria.dateRange?.end || "",
+                    },
+                  })
                 }
-              >
-                <SelectTrigger className="h-12 bg-white/80 border-slate-200">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm">
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="true">With Website</SelectItem>
-                  <SelectItem value="false">No Website</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="bg-slate-200" />
-
-        {/* Status and Source Filters */}
-        <div className="space-y-6">
-          <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Filter className="h-4 w-4 text-emerald-600" />
-            </div>
-            Status & Source
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">Status</Label>
-              <Select
-                value={criteria.status || "all"}
-                onValueChange={(value) => updateCriteria({ status: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger className="h-12 bg-white/80 border-slate-200">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm">
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="not_sent">Not Sent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">Source</Label>
-              <Select
-                value={criteria.source || "all"}
-                onValueChange={(value) => updateCriteria({ source: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger className="h-12 bg-white/80 border-slate-200">
-                  <SelectValue placeholder="All Sources" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm">
-                  <SelectItem value="all">All Sources</SelectItem>
-                  {sources.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source.replace("_", " ").toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="bg-slate-200" />
-
-        {/* Date Range */}
-        <div className="space-y-6">
-          <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Calendar className="h-4 w-4 text-orange-600" />
-            </div>
-            Date Range
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">From Date</Label>
-              <Input
-                type="date"
-                value={criteria.dateFrom || ""}
-                onChange={(e) => updateCriteria({ dateFrom: e.target.value })}
-                className="h-12 bg-white/80 border-slate-200"
+                className="bg-white/80 text-sm"
               />
-            </div>
-            <div className="space-y-3">
-              <Label className="text-slate-700 font-medium">To Date</Label>
               <Input
                 type="date"
-                value={criteria.dateTo || ""}
-                onChange={(e) => updateCriteria({ dateTo: e.target.value })}
-                className="h-12 bg-white/80 border-slate-200"
+                value={criteria.dateRange?.end || ""}
+                onChange={(e) =>
+                  setCriteria({
+                    ...criteria,
+                    dateRange: {
+                      start: criteria.dateRange?.start || "",
+                      end: e.target.value,
+                    },
+                  })
+                }
+                className="bg-white/80 text-sm"
               />
             </div>
           </div>
@@ -432,32 +295,33 @@ export function AdvancedSearch({
         {/* Custom Fields */}
         {customFields.length > 0 && (
           <>
-            <Separator className="bg-slate-200" />
-            <div className="space-y-6">
-              <h4 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <User className="h-4 w-4 text-purple-600" />
-                </div>
-                Custom Fields
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {customFields.slice(0, 4).map((field) => (
-                  <div key={field} className="space-y-3">
-                    <Label className="capitalize text-slate-700 font-medium">
-                      {field.replace(/([A-Z])/g, " $1").trim()}
-                    </Label>
+            <Separator />
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-slate-600" />
+                <Label className="text-sm font-medium text-slate-700">Custom Fields</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {customFields.map((field) => (
+                  <div key={field} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm text-slate-600">{field}</Label>
+                      {criteria.customFields?.[field] && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCustomField(field)}
+                          className="h-6 w-6 p-0 text-slate-400 hover:text-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                     <Input
+                      placeholder={`Filter by ${field}...`}
                       value={criteria.customFields?.[field] || ""}
-                      onChange={(e) =>
-                        updateCriteria({
-                          customFields: {
-                            ...criteria.customFields,
-                            [field]: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder={`Search ${field}...`}
-                      className="h-12 bg-white/80 border-slate-200"
+                      onChange={(e) => updateCustomField(field, e.target.value)}
+                      className="bg-white/80 text-sm"
                     />
                   </div>
                 ))}
@@ -467,45 +331,119 @@ export function AdvancedSearch({
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-slate-200">
-          <div className="flex items-center gap-3">
-            {hasActiveFilters && (
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(criteria).map(([key, value]) => {
-                  if (!value || value === "all") return null
-                  return (
-                    <Badge key={key} variant="outline" className="text-xs bg-slate-50 border-slate-300">
-                      {key}: {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
-                      <button
-                        onClick={() => updateCriteria({ [key]: undefined })}
-                        className="ml-2 hover:bg-slate-200 rounded-full p-0.5 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClear}
-              disabled={!hasActiveFilters}
-              className="bg-white/80 border-slate-200 hover:bg-slate-50"
-            >
-              Clear All
-            </Button>
-            <Button
-              onClick={handleSearch}
-              className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-8"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <Button
+            onClick={handleSearch}
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex-1 sm:flex-none"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Apply Filters
+          </Button>
+
+          <Button
+            onClick={handleClear}
+            variant="outline"
+            className="border-slate-200 text-slate-700 hover:bg-slate-50 flex-1 sm:flex-none bg-transparent"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Clear All
+          </Button>
+
+          <Button
+            onClick={handleSaveSearch}
+            variant="outline"
+            className="border-green-200 text-green-700 hover:bg-green-50 flex-1 sm:flex-none bg-transparent"
+            disabled={getActiveFiltersCount() === 0}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Search
+          </Button>
         </div>
+
+        {/* Saved Searches */}
+        {savedSearches.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-slate-600" />
+                <Label className="text-sm font-medium text-slate-700">Saved Searches</Label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {savedSearches.map((saved, index) => (
+                  <Card key={index} className="border border-slate-200 hover:border-indigo-300 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm text-slate-800 truncate">{saved.name}</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteSavedSearch(index)}
+                          className="h-6 w-6 p-0 text-slate-400 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleLoadSearch(saved.criteria)}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-xs flex-1"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Load
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Search Results Summary */}
+        {getActiveFiltersCount() > 0 && (
+          <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <div className="flex items-center gap-2 text-indigo-800">
+              <Filter className="h-4 w-4" />
+              <span className="font-medium">Active Filters:</span>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {criteria.searchTerm && (
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  Text: "{criteria.searchTerm}"
+                </Badge>
+              )}
+              {criteria.category && (
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  Category: {criteria.category}
+                </Badge>
+              )}
+              {criteria.hasWebsite !== undefined && (
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  Website: {criteria.hasWebsite ? "Yes" : "No"}
+                </Badge>
+              )}
+              {criteria.status && (
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  Status: {criteria.status}
+                </Badge>
+              )}
+              {criteria.source && (
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  Source: {criteria.source}
+                </Badge>
+              )}
+              {criteria.customFields &&
+                Object.entries(criteria.customFields).map(([field, value]) => (
+                  <Badge key={field} variant="secondary" className="bg-indigo-100 text-indigo-700">
+                    {field}: {value}
+                  </Badge>
+                ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
