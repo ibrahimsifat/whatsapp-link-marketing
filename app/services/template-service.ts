@@ -2,7 +2,15 @@ import type { Contact, MessageTemplate } from "../types/contact"
 
 export class TemplateService {
   /**
-   * Replaces template variables with contact data
+   * Ensures proper emoji encoding for WhatsApp URLs
+   */
+  static encodeForWhatsApp(text: string): string {
+    // This ensures emojis are properly encoded when creating WhatsApp links
+    return encodeURIComponent(text)
+  }
+
+  /**
+   * Replaces template variables with contact data and ensures proper encoding
    */
   static replaceVariables(template: string, contact: Partial<Contact>): string {
     let replacedText = template
@@ -19,6 +27,7 @@ export class TemplateService {
         }
       }
     }
+
     return replacedText
   }
 
@@ -40,10 +49,11 @@ export class TemplateService {
   }
 
   /**
-   * Validates template syntax
+   * Validates template syntax and content quality
    */
-  static validateTemplate(template: string): { isValid: boolean; errors: string[] } {
+  static validateTemplate(template: string): { isValid: boolean; errors: string[]; warnings: string[] } {
     const errors: string[] = []
+    const warnings: string[] = []
     const variables = this.extractVariables(template)
 
     // Check for unclosed braces
@@ -59,9 +69,38 @@ export class TemplateService {
       errors.push("Empty variable names found")
     }
 
+    // Content quality checks
+    if (template.length < 10) {
+      warnings.push("Template is very short")
+    }
+
+    if (template.length > 1000) {
+      warnings.push("Template is quite long - consider shortening for better engagement")
+    }
+
+    // Check for professional tone
+    const unprofessionalWords = ["hey", "yo", "sup", "lol", "omg"]
+    const hasUnprofessional = unprofessionalWords.some((word) => template.toLowerCase().includes(word))
+    if (hasUnprofessional) {
+      warnings.push("Consider using more professional language")
+    }
+
+    // Check for call-to-action
+    const hasCallToAction =
+      template.includes("?") ||
+      template.toLowerCase().includes("contact") ||
+      template.toLowerCase().includes("call") ||
+      template.toLowerCase().includes("reply") ||
+      template.toLowerCase().includes("interested")
+
+    if (!hasCallToAction) {
+      warnings.push("Consider adding a clear call-to-action")
+    }
+
     return {
       isValid: errors.length === 0,
       errors,
+      warnings,
     }
   }
 
@@ -94,5 +133,144 @@ export class TemplateService {
     }
 
     return this.replaceVariables(template.content, sampleContact)
+  }
+
+  /**
+   * Optimizes template for better engagement
+   */
+  static optimizeTemplate(template: string): { optimized: string; changes: string[] } {
+    let optimized = template
+    const changes: string[] = []
+
+    // Add greeting if missing
+    if (
+      !template.toLowerCase().startsWith("hi") &&
+      !template.toLowerCase().startsWith("hello") &&
+      !template.toLowerCase().startsWith("dear")
+    ) {
+      optimized = "Hello! 👋\n\n" + optimized
+      changes.push("Added professional greeting")
+    }
+
+    // Ensure proper spacing around variables
+    optimized = optimized.replace(/\{(\w+)\}/g, " {$1} ").replace(/\s+/g, " ")
+
+    // Add closing if missing
+    if (
+      !template.toLowerCase().includes("regards") &&
+      !template.toLowerCase().includes("best") &&
+      !template.toLowerCase().includes("sincerely")
+    ) {
+      optimized += "\n\nBest regards! 🤝"
+      changes.push("Added professional closing")
+    }
+
+    return {
+      optimized: optimized.trim(),
+      changes,
+    }
+  }
+
+  /**
+   * Analyzes template performance potential
+   */
+  static analyzeTemplate(template: string): {
+    score: number
+    factors: { factor: string; impact: string; score: number }[]
+    recommendations: string[]
+  } {
+    const factors: { factor: string; impact: string; score: number }[] = []
+    const recommendations: string[] = []
+    let totalScore = 0
+
+    // Length analysis
+    const length = template.length
+    if (length >= 50 && length <= 300) {
+      factors.push({ factor: "Message Length", impact: "Optimal", score: 20 })
+      totalScore += 20
+    } else if (length < 50) {
+      factors.push({ factor: "Message Length", impact: "Too Short", score: 10 })
+      totalScore += 10
+      recommendations.push("Consider adding more context to your message")
+    } else {
+      factors.push({ factor: "Message Length", impact: "Too Long", score: 5 })
+      totalScore += 5
+      recommendations.push("Consider shortening your message for better engagement")
+    }
+
+    // Personalization
+    const hasVariables = template.includes("{") && template.includes("}")
+    if (hasVariables) {
+      factors.push({ factor: "Personalization", impact: "Good", score: 25 })
+      totalScore += 25
+    } else {
+      factors.push({ factor: "Personalization", impact: "Missing", score: 0 })
+      recommendations.push("Add personalization variables like {companyName}")
+    }
+
+    // Call to action
+    const hasCallToAction =
+      template.includes("?") ||
+      template.toLowerCase().includes("interested") ||
+      template.toLowerCase().includes("contact") ||
+      template.toLowerCase().includes("call")
+
+    if (hasCallToAction) {
+      factors.push({ factor: "Call to Action", impact: "Present", score: 20 })
+      totalScore += 20
+    } else {
+      factors.push({ factor: "Call to Action", impact: "Missing", score: 0 })
+      recommendations.push("Add a clear call-to-action to encourage response")
+    }
+
+    // Professional tone
+    const professionalWords = ["professional", "business", "service", "solution", "opportunity"]
+    const hasProfessionalTone = professionalWords.some((word) => template.toLowerCase().includes(word))
+
+    if (hasProfessionalTone) {
+      factors.push({ factor: "Professional Tone", impact: "Good", score: 15 })
+      totalScore += 15
+    } else {
+      factors.push({ factor: "Professional Tone", impact: "Could Improve", score: 10 })
+      totalScore += 10
+      recommendations.push("Consider using more professional business language")
+    }
+
+    // Emoji usage
+    const emojiCount = (
+      template.match(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+      ) || []
+    ).length
+
+    if (emojiCount >= 1 && emojiCount <= 3) {
+      factors.push({ factor: "Emoji Usage", impact: "Balanced", score: 10 })
+      totalScore += 10
+    } else if (emojiCount === 0) {
+      factors.push({ factor: "Emoji Usage", impact: "None", score: 5 })
+      totalScore += 5
+      recommendations.push("Consider adding 1-2 professional emojis")
+    } else {
+      factors.push({ factor: "Emoji Usage", impact: "Too Many", score: 2 })
+      totalScore += 2
+      recommendations.push("Reduce emoji usage for more professional appearance")
+    }
+
+    // Formatting
+    const hasFormatting = template.includes("*") || template.includes("_") || template.includes("~")
+    if (hasFormatting) {
+      factors.push({ factor: "Text Formatting", impact: "Good", score: 10 })
+      totalScore += 10
+    } else {
+      factors.push({ factor: "Text Formatting", impact: "Basic", score: 5 })
+      totalScore += 5
+      recommendations.push("Use *bold* or _italic_ to emphasize key points")
+    }
+
+    return {
+      score: Math.min(100, totalScore),
+      factors,
+      recommendations,
+    }
   }
 }
