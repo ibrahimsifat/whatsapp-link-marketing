@@ -62,7 +62,7 @@ export function useContactStorage() {
           }
         })
 
-        if (uniqueContacts.length === 0) {
+        if (uniqueContacts.length === 0 && contacts.length > 0) {
           return {
             success: false,
             message: `All ${contacts.length} contacts were duplicates. No new contacts saved.`,
@@ -230,32 +230,48 @@ export function useContactStorage() {
           return contact
         })
 
-        const result = await saveContacts(updatedContacts)
-        return result
+        const stats = calculateStats(updatedContacts)
+        const newDatabase: ContactDatabase = {
+          contacts: updatedContacts,
+          lastUpdated: new Date().toISOString(),
+          version: DB_VERSION,
+          ...stats,
+        }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newDatabase))
+        setDatabase(newDatabase)
+
+        return { success: true, message: "Contact status updated successfully" }
       } catch (error) {
         console.error("Error updating contact status:", error)
         return { success: false, message: "Failed to update contact status" }
       }
     },
-    [database.contacts, saveContacts],
+    [database.contacts],
   )
 
   const deleteContact = useCallback(
     async (contactId: string) => {
       try {
         const updatedContacts = database.contacts.filter((contact) => contact.id !== contactId)
-        const result = await saveContacts(updatedContacts)
-
-        if (result.success) {
-          return { success: true, message: "Contact deleted successfully" }
+        const stats = calculateStats(updatedContacts)
+        const newDatabase: ContactDatabase = {
+          contacts: updatedContacts,
+          lastUpdated: new Date().toISOString(),
+          version: DB_VERSION,
+          ...stats,
         }
-        return result
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newDatabase))
+        setDatabase(newDatabase)
+
+        return { success: true, message: "Contact deleted successfully" }
       } catch (error) {
         console.error("Error deleting contact:", error)
         return { success: false, message: "Failed to delete contact" }
       }
     },
-    [database.contacts, saveContacts],
+    [database.contacts],
   )
 
   const exportContacts = useCallback(() => {
@@ -280,14 +296,29 @@ export function useContactStorage() {
   }, [database])
 
   const clearAllContacts = useCallback(async () => {
+    setIsLoading(true)
     try {
-      const result = await saveContacts([])
-      return result
+      const emptyDatabase: ContactDatabase = {
+        contacts: [],
+        lastUpdated: new Date().toISOString(),
+        version: DB_VERSION,
+        totalContacts: 0,
+        sentCount: 0,
+        pendingCount: 0,
+        notSentCount: 0,
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDatabase))
+      setDatabase(emptyDatabase)
+
+      return { success: true, message: "All contacts cleared successfully" }
     } catch (error) {
       console.error("Error clearing contacts:", error)
       return { success: false, message: "Failed to clear contacts" }
+    } finally {
+      setIsLoading(false)
     }
-  }, [saveContacts])
+  }, [])
 
   return {
     database,

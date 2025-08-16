@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -28,21 +28,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  Copy,
-  ExternalLink,
-  Edit,
-  Trash2,
+  MessageCircle,
   Building,
   Globe,
   Phone,
+  Edit,
+  Trash2,
+  Copy,
   CheckCircle,
   XCircle,
   Clock,
-  Save,
-  X,
-  MessageSquare,
+  Calendar,
+  User,
+  Tag,
+  FileText,
 } from "lucide-react"
-import { ClipboardUtils } from "../utils/clipboard-utils"
 import type { Contact } from "../types/contact"
 
 interface ContactCardProps {
@@ -52,7 +52,7 @@ interface ContactCardProps {
   onToggleSelect: () => void
   onUpdate: (contact: Contact) => void
   onDelete: () => void
-  onShowToast: (message: string, type: "success" | "error") => void
+  onShowToast: (message: string, type?: "success" | "error") => void
 }
 
 export function ContactCard({
@@ -66,15 +66,35 @@ export function ContactCard({
 }: ContactCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedContact, setEditedContact] = useState<Contact>(contact)
-  const [linkCopied, setLinkCopied] = useState(false)
+
+  const handleOpenChat = async () => {
+    try {
+      // Update contact status to "sent" when opening WhatsApp
+      const updatedContact = {
+        ...contact,
+        status: "sent" as const,
+        sentAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      }
+
+      onUpdate(updatedContact)
+
+      // Open WhatsApp link
+      window.open(contact.whatsappLink, "_blank")
+
+      onShowToast("WhatsApp chat opened and status updated to sent", "success")
+    } catch (error) {
+      console.error("Error opening chat:", error)
+      onShowToast("Failed to update contact status", "error")
+    }
+  }
 
   const handleCopyLink = async () => {
-    const success = await ClipboardUtils.copyToClipboard(contact.whatsappLink)
-    if (success) {
-      setLinkCopied(true)
-      setTimeout(() => setLinkCopied(false), 2000)
-      onShowToast("WhatsApp link copied to clipboard!", "success")
-    } else {
+    try {
+      await navigator.clipboard.writeText(contact.whatsappLink)
+      onShowToast("WhatsApp link copied to clipboard", "success")
+    } catch (error) {
+      console.error("Failed to copy link:", error)
       onShowToast("Failed to copy link", "error")
     }
   }
@@ -88,24 +108,6 @@ export function ContactCard({
   const handleCancelEdit = () => {
     setEditedContact(contact)
     setIsEditing(false)
-  }
-
-  const handleOpenChat = () => {
-    // Update contact status to sent
-    const updatedContact = {
-      ...contact,
-      status: "sent" as const,
-      sentAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-    }
-
-    onUpdate(updatedContact)
-
-    // Open WhatsApp link
-    window.open(contact.whatsappLink, "_blank")
-
-    // Show success message
-    onShowToast("WhatsApp chat opened and status updated to sent", "success")
   }
 
   const getStatusColor = (status: Contact["status"]) => {
@@ -122,278 +124,228 @@ export function ContactCard({
   const getStatusIcon = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-3 w-3" />
       case "not_sent":
-        return <XCircle className="h-4 w-4" />
+        return <XCircle className="h-3 w-3" />
       default:
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-3 w-3" />
     }
   }
 
   return (
     <Card
-      className={`transition-all duration-200 hover:shadow-lg border-l-4 ${
-        isSelected
-          ? "border-l-purple-500 bg-purple-50/50 shadow-md"
-          : contact.hasWebsite
-            ? "border-l-green-500 hover:bg-green-50/30"
-            : "border-l-orange-500 hover:bg-orange-50/30"
-      }`}
+      className={`transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-blue-500 bg-blue-50/30" : ""}`}
     >
       <CardContent className="p-4 sm:p-6">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           {/* Selection Checkbox */}
           <div className="flex items-center pt-1">
-            <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} className="h-5 w-5" />
+            <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} className="h-4 w-4" />
           </div>
 
           {/* Contact Number */}
-          <div className="flex-shrink-0 w-12 text-center">
-            <div className="text-sm font-bold text-slate-600 bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center mx-auto">
+          <div className="flex-shrink-0 w-8 sm:w-10 text-center">
+            <span className="text-xs sm:text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
               {index + 1}
-            </div>
+            </span>
           </div>
 
           {/* Main Content */}
           <div className="flex-1 min-w-0 space-y-3">
             {/* Header Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <Building className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-slate-900 text-base sm:text-lg truncate">
-                    {contact.companyName || "Unknown Company"}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">{contact.normalized}</span>
-                  </div>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Building className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <h3 className="font-semibold text-gray-900 truncate text-sm sm:text-base">
+                  {contact.companyName || "Unknown Company"}
+                </h3>
+                {contact.companyCategory && (
+                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                    <Tag className="h-3 w-3 mr-1" />
+                    {contact.companyCategory}
+                  </Badge>
+                )}
               </div>
-
-              {/* Status Badge */}
-              <Badge className={`${getStatusColor(contact.status)} flex items-center gap-1 flex-shrink-0`}>
+              <Badge className={`${getStatusColor(contact.status)} text-xs flex-shrink-0`}>
                 {getStatusIcon(contact.status)}
-                <span className="capitalize">{contact.status.replace("_", " ")}</span>
+                <span className="ml-1 capitalize">{contact.status.replace("_", " ")}</span>
               </Badge>
             </div>
 
-            {/* Details Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+            {/* Contact Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  Category
-                </Badge>
-                <span className="text-slate-600 truncate">{contact.companyCategory || "Not specified"}</span>
+                <Phone className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                <span className="text-gray-700 font-mono text-xs sm:text-sm">{contact.original}</span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                {contact.hasWebsite ? (
+              {contact.website && (
+                <div className="flex items-center gap-2">
+                  <Globe className="h-3 w-3 text-gray-500 flex-shrink-0" />
                   <a
                     href={contact.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 truncate hover:underline"
+                    className="text-blue-600 hover:text-blue-800 truncate text-xs sm:text-sm"
                   >
-                    {contact.website}
+                    {contact.website.replace(/^https?:\/\//, "")}
                   </a>
-                ) : (
-                  <span className="text-slate-400">No website</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  Source
-                </Badge>
-                <span className="text-slate-600 truncate">{contact.source}</span>
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Custom Fields */}
+            {/* Dynamic Data */}
             {contact.dynamicData && Object.keys(contact.dynamicData).length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Custom Fields</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {Object.entries(contact.dynamicData).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline" className="text-xs">
-                        {key}
-                      </Badge>
-                      <span className="text-slate-600 truncate">{String(value || "N/A")}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {Object.entries(contact.dynamicData).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <User className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                    <span className="text-gray-600 text-xs">
+                      <span className="font-medium">{key}:</span> {String(value)}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button onClick={handleCopyLink} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                {linkCopied ? <CheckCircle className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                <span className="hidden sm:inline">{linkCopied ? "Copied!" : "Copy Link"}</span>
-                <span className="sm:hidden">{linkCopied ? "✓" : "Copy"}</span>
-              </Button>
+            {/* Timestamps */}
+            <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+              {contact.sentAt && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>Sent: {new Date(contact.sentAt).toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>Updated: {new Date(contact.lastUpdated).toLocaleString()}</span>
+              </div>
+            </div>
 
-              <Button
-                onClick={handleOpenChat}
-                size="sm"
-                variant="outline"
-                className="border-blue-200 text-blue-700 hover:bg-blue-50 bg-transparent"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Open Chat</span>
-                <span className="sm:hidden">Open</span>
-              </Button>
+            {/* Notes */}
+            {contact.notes && (
+              <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                <FileText className="h-3 w-3 text-gray-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-gray-600">{contact.notes}</p>
+              </div>
+            )}
+          </div>
 
-              <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-slate-200 text-slate-700 hover:bg-slate-50 bg-transparent"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Edit</span>
-                    <span className="sm:hidden">Edit</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Edit className="h-5 w-5" />
-                      Edit Contact
-                    </DialogTitle>
-                    <DialogDescription>Update contact information and custom fields</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="companyName">Company Name</Label>
-                        <Input
-                          id="companyName"
-                          value={editedContact.companyName || ""}
-                          onChange={(e) => setEditedContact({ ...editedContact, companyName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="companyCategory">Category</Label>
-                        <Input
-                          id="companyCategory"
-                          value={editedContact.companyCategory || ""}
-                          onChange={(e) => setEditedContact({ ...editedContact, companyCategory: e.target.value })}
-                        />
-                      </div>
-                    </div>
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-2 flex-shrink-0">
+            <Button
+              onClick={handleOpenChat}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 text-xs"
+            >
+              <MessageCircle className="h-3 w-3 mr-1" />
+              <span className="hidden sm:inline">Open Chat</span>
+              <span className="sm:hidden">Chat</span>
+            </Button>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        value={editedContact.website || ""}
-                        onChange={(e) =>
-                          setEditedContact({
-                            ...editedContact,
-                            website: e.target.value,
-                            hasWebsite: !!e.target.value,
-                          })
-                        }
-                        placeholder="https://example.com"
-                      />
-                    </div>
+            <Button onClick={handleCopyLink} variant="outline" size="sm" className="px-3 py-1.5 text-xs bg-transparent">
+              <Copy className="h-3 w-3 mr-1" />
+              <span className="hidden sm:inline">Copy Link</span>
+              <span className="sm:hidden">Copy</span>
+            </Button>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        value={editedContact.notes || ""}
-                        onChange={(e) => setEditedContact({ ...editedContact, notes: e.target.value })}
-                        rows={3}
-                        placeholder="Add notes about this contact..."
-                      />
-                    </div>
-
-                    {/* Custom Fields */}
-                    {editedContact.dynamicData && Object.keys(editedContact.dynamicData).length > 0 && (
-                      <div className="space-y-3">
-                        <Label>Custom Fields</Label>
-                        <div className="space-y-2">
-                          {Object.entries(editedContact.dynamicData).map(([key, value]) => (
-                            <div key={key} className="grid grid-cols-3 gap-2 items-center">
-                              <Label className="text-sm font-medium">{key}</Label>
-                              <Input
-                                value={String(value || "")}
-                                onChange={(e) =>
-                                  setEditedContact({
-                                    ...editedContact,
-                                    dynamicData: {
-                                      ...editedContact.dynamicData,
-                                      [key]: e.target.value,
-                                    },
-                                  })
-                                }
-                                className="col-span-2"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+            <Dialog open={isEditing} onOpenChange={setIsEditing}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs bg-transparent">
+                  <Edit className="h-3 w-3 mr-1" />
+                  <span className="hidden sm:inline">Edit</span>
+                  <span className="sm:hidden">Edit</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md mx-4">
+                <DialogHeader>
+                  <DialogTitle className="text-base">Edit Contact</DialogTitle>
+                  <DialogDescription className="text-sm">Update the contact information below.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName" className="text-sm font-medium">
+                      Company Name
+                    </Label>
+                    <Input
+                      id="companyName"
+                      value={editedContact.companyName || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, companyName: e.target.value })}
+                      className="text-sm"
+                    />
                   </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={handleCancelEdit}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveEdit} className="bg-green-600 hover:bg-green-700">
-                      <Save className="h-4 w-4 mr-2" />
+                  <div className="space-y-2">
+                    <Label htmlFor="companyCategory" className="text-sm font-medium">
+                      Category
+                    </Label>
+                    <Input
+                      id="companyCategory"
+                      value={editedContact.companyCategory || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, companyCategory: e.target.value })}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website" className="text-sm font-medium">
+                      Website
+                    </Label>
+                    <Input
+                      id="website"
+                      value={editedContact.website || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, website: e.target.value })}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes" className="text-sm font-medium">
+                      Notes
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      value={editedContact.notes || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, notes: e.target.value })}
+                      rows={3}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button onClick={handleSaveEdit} className="flex-1 text-sm">
                       Save Changes
                     </Button>
+                    <Button onClick={handleCancelEdit} variant="outline" className="flex-1 text-sm bg-transparent">
+                      Cancel
+                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
+                </div>
+              </DialogContent>
+            </Dialog>
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-red-200 text-red-700 hover:bg-red-50 bg-transparent"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Delete</span>
-                    <span className="sm:hidden">Del</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Contact</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete {contact.companyName || contact.normalized}? This action cannot be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
-                      Delete Contact
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
-            {/* Sent Timestamp */}
-            {contact.status === "sent" && contact.sentAt && (
-              <div className="text-xs text-slate-500 flex items-center gap-1 pt-2 border-t border-slate-100">
-                <MessageSquare className="h-3 w-3" />
-                <span>Sent: {new Date(contact.sentAt).toLocaleString()}</span>
-              </div>
-            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 px-3 py-1.5 text-xs bg-transparent"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  <span className="hidden sm:inline">Delete</span>
+                  <span className="sm:hidden">Del</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-md mx-4">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-base">Delete Contact</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm">
+                    Are you sure you want to delete this contact? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                    Delete Contact
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardContent>

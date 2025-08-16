@@ -130,6 +130,22 @@ export function ContactManagement({
     }
   }
 
+  const handleClearAllContacts = async () => {
+    try {
+      const result = await onClearAllContacts()
+      if (result.success) {
+        // Clear current contacts as well
+        onUpdateCurrentContacts([])
+        alert(result.message)
+      } else {
+        alert(`Error: ${result.message}`)
+      }
+    } catch (error) {
+      console.error("Error clearing all contacts:", error)
+      alert("Failed to clear all contacts")
+    }
+  }
+
   const getStatusColor = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
@@ -254,13 +270,14 @@ export function ContactManagement({
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-base sm:text-lg">Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription className="text-xs sm:text-sm">
-                  This action cannot be undone. This will permanently delete all saved contacts and their tracking data.
+                  This action cannot be undone. This will permanently delete all {database.totalContacts} saved contacts
+                  and their tracking data.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                 <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={onClearAllContacts}
+                  onClick={handleClearAllContacts}
                   className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
                 >
                   Delete All Contacts
