@@ -156,6 +156,9 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
 
     const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase().trim())
     const contacts: Contact[] = []
+    const seenNumbers = new Set<string>()
+    let duplicateCount = 0
+    let invalidCount = 0
 
     // Find column indices
     const phoneIndex = headers.findIndex(
@@ -177,17 +180,31 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
 
       if (row.length < headers.length) {
         console.warn(`Row ${i + 1} has fewer columns than headers, skipping`)
+        invalidCount++
         continue
       }
 
       const phoneNumber = row[phoneIndex]?.trim()
-      if (!phoneNumber) continue
+      if (!phoneNumber) {
+        invalidCount++
+        continue
+      }
 
       const normalized = PhoneService.normalizePhoneNumber(phoneNumber)
       if (!normalized) {
         console.warn(`Invalid phone number in row ${i + 1}: ${phoneNumber}`)
+        invalidCount++
         continue
       }
+
+      // Check for duplicates within the sheet
+      if (seenNumbers.has(normalized)) {
+        duplicateCount++
+        console.warn(`Duplicate phone number in row ${i + 1}: ${phoneNumber}`)
+        continue
+      }
+
+      seenNumbers.add(normalized)
 
       const companyName = companyIndex >= 0 ? row[companyIndex]?.trim() : ""
       const companyCategory = categoryIndex >= 0 ? row[categoryIndex]?.trim() : ""
@@ -227,6 +244,14 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
 
       contacts.push(contact)
     }
+
+    // Update import statistics
+    setImportStats({
+      total: lines.length - 1, // Exclude header
+      successful: contacts.length,
+      duplicates: duplicateCount,
+      errors: invalidCount,
+    })
 
     if (contacts.length === 0) {
       throw new Error("No valid contacts found in the sheet")

@@ -90,6 +90,24 @@ export function ContactCard({
     setIsEditing(false)
   }
 
+  const handleOpenChat = () => {
+    // Update contact status to sent
+    const updatedContact = {
+      ...contact,
+      status: "sent" as const,
+      sentAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    }
+
+    onUpdate(updatedContact)
+
+    // Open WhatsApp link
+    window.open(contact.whatsappLink, "_blank")
+
+    // Show success message
+    onShowToast("WhatsApp chat opened and status updated to sent", "success")
+  }
+
   const getStatusColor = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
@@ -221,10 +239,10 @@ export function ContactCard({
               </Button>
 
               <Button
-                onClick={() => window.open(contact.whatsappLink, "_blank")}
+                onClick={handleOpenChat}
                 size="sm"
                 variant="outline"
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                className="border-blue-200 text-blue-700 hover:bg-blue-50 bg-transparent"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Open Chat</span>

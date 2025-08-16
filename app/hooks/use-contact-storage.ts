@@ -41,44 +41,93 @@ export function useContactStorage() {
     return sizeInBytes <= MAX_STORAGE_SIZE
   }
 
-  const saveContacts = useCallback(async (contacts: Contact[]) => {
-    setIsLoading(true)
-    try {
-      const stats = calculateStats(contacts)
-      const newDatabase: ContactDatabase = {
-        contacts,
-        lastUpdated: new Date().toISOString(),
-        version: DB_VERSION,
-        ...stats,
-      }
+  const saveContacts = useCallback(
+    async (contacts: Contact[]) => {
+      setIsLoading(true)
+      try {
+        // Filter out duplicates against existing contacts
+        const existingNumbers = new Set(database.contacts.map((c) => c.normalized))
+        const uniqueContacts: Contact[] = []
+        const duplicates: Contact[] = []
 
-      const dataString = JSON.stringify(newDatabase)
+        // Also track duplicates within the new batch
+        const newBatchNumbers = new Set<string>()
 
-      // Check if data exceeds storage limit
-      if (!checkStorageSize(dataString)) {
-        return {
-          success: false,
-          message: "Storage limit exceeded (10MB). Please reduce the number of contacts or export and clear some data.",
+        contacts.forEach((contact) => {
+          if (existingNumbers.has(contact.normalized) || newBatchNumbers.has(contact.normalized)) {
+            duplicates.push(contact)
+          } else {
+            uniqueContacts.push(contact)
+            newBatchNumbers.add(contact.normalized)
+          }
+        })
+
+        if (uniqueContacts.length === 0) {
+          return {
+            success: false,
+            message: `All ${contacts.length} contacts were duplicates. No new contacts saved.`,
+            stats: {
+              total: contacts.length,
+              saved: 0,
+              duplicates: duplicates.length,
+            },
+          }
         }
-      }
 
-      localStorage.setItem(STORAGE_KEY, dataString)
-      setDatabase(newDatabase)
+        // Combine existing contacts with new unique contacts
+        const allContacts = [...database.contacts, ...uniqueContacts]
+        const stats = calculateStats(allContacts)
 
-      return { success: true, message: `Saved ${contacts.length} contacts successfully` }
-    } catch (error) {
-      console.error("Error saving contacts:", error)
-      if (error instanceof Error && error.name === "QuotaExceededError") {
-        return {
-          success: false,
-          message: "Storage quota exceeded. Please export and clear some contacts to free up space.",
+        const newDatabase: ContactDatabase = {
+          contacts: allContacts,
+          lastUpdated: new Date().toISOString(),
+          version: DB_VERSION,
+          ...stats,
         }
+
+        const dataString = JSON.stringify(newDatabase)
+
+        // Check if data exceeds storage limit
+        if (!checkStorageSize(dataString)) {
+          return {
+            success: false,
+            message:
+              "Storage limit exceeded (10MB). Please reduce the number of contacts or export and clear some data.",
+          }
+        }
+
+        localStorage.setItem(STORAGE_KEY, dataString)
+        setDatabase(newDatabase)
+
+        const message =
+          duplicates.length > 0
+            ? `Saved ${uniqueContacts.length} new contacts. ${duplicates.length} duplicates were skipped.`
+            : `Saved ${uniqueContacts.length} contacts successfully`
+
+        return {
+          success: true,
+          message,
+          stats: {
+            total: contacts.length,
+            saved: uniqueContacts.length,
+            duplicates: duplicates.length,
+          },
+        }
+      } catch (error) {
+        console.error("Error saving contacts:", error)
+        if (error instanceof Error && error.name === "QuotaExceededError") {
+          return {
+            success: false,
+            message: "Storage quota exceeded. Please export and clear some contacts to free up space.",
+          }
+        }
+        return { success: false, message: "Failed to save contacts" }
+      } finally {
+        setIsLoading(false)
       }
-      return { success: false, message: "Failed to save contacts" }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+    },
+    [database.contacts],
+  )
 
   const mergeContacts = useCallback(
     async (newContacts: Contact[], source: string) => {
@@ -92,8 +141,18 @@ export function useContactStorage() {
         // Create a map of existing contacts by normalized phone number
         const existingMap = new Map(existingContacts.map((contact) => [contact.normalized, contact]))
 
+        // Track numbers within the new batch to avoid internal duplicates
+        const processedNumbers = new Set<string>()
+
         // Process new contacts
         for (const newContact of newContacts) {
+          // Skip if we've already processed this number in the current batch
+          if (processedNumbers.has(newContact.normalized)) {
+            duplicates.push(newContact)
+            continue
+          }
+
+          processedNumbers.add(newContact.normalized)
           const existing = existingMap.get(newContact.normalized)
 
           if (existing) {
@@ -125,7 +184,7 @@ export function useContactStorage() {
 
         // Add remaining existing contacts that weren't updated
         for (const existing of existingContacts) {
-          if (!newContacts.some((nc) => nc.normalized === existing.normalized)) {
+          if (!processedNumbers.has(existing.normalized)) {
             mergedContacts.push(existing)
           }
         }
@@ -138,7 +197,7 @@ export function useContactStorage() {
 
         return {
           success: true,
-          message: `Merged successfully: ${newAdditions.length} new, ${duplicates.length} updated`,
+          message: `Merged successfully: ${newAdditions.length} new, ${duplicates.length} duplicates handled`,
           stats: {
             newContacts: newAdditions.length,
             duplicates: duplicates.length,

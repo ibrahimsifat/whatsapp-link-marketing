@@ -125,6 +125,7 @@ export class FileService {
     const contacts: Contact[] = []
     const warnings: string[] = []
     const seenNumbers = new Set<string>()
+    let duplicateCount = 0
 
     if (data.length < 2) {
       warnings.push("File should contain at least a header row and one data row")
@@ -140,11 +141,14 @@ export class FileService {
       try {
         const contact = this.extractContactFromRow(row, columnMapping, fileName, customMessage)
 
-        if (contact && !seenNumbers.has(contact.normalized)) {
-          seenNumbers.add(contact.normalized)
-          contacts.push(contact)
-        } else if (contact) {
-          warnings.push(`Duplicate phone number found at row ${rowIndex + 2}: ${contact.original}`)
+        if (contact) {
+          if (seenNumbers.has(contact.normalized)) {
+            duplicateCount++
+            warnings.push(`Duplicate phone number found at row ${rowIndex + 2}: ${contact.original}`)
+          } else {
+            seenNumbers.add(contact.normalized)
+            contacts.push(contact)
+          }
         }
       } catch (error) {
         warnings.push(
@@ -152,6 +156,10 @@ export class FileService {
         )
       }
     })
+
+    if (duplicateCount > 0) {
+      warnings.push(`Found ${duplicateCount} duplicate phone numbers within the file`)
+    }
 
     return { contacts, warnings }
   }
