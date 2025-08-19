@@ -519,8 +519,7 @@ export default function WhatsAppLinkGenerator() {
                   onItemsPerPageChange={(itemsPerPage) => updateState({ itemsPerPage, currentPage: 1 })}
                 />
               </div>
-
-              {/* Contact Cards */}
+            {/* Contact Cards */}
               <div className="space-y-4">
                 {paginatedContacts.contacts.map((contact, index) => (
                   <ContactCard
@@ -529,11 +528,16 @@ export default function WhatsAppLinkGenerator() {
                     index={(paginatedContacts.currentPage - 1) * state.itemsPerPage + index}
                     isSelected={selectedContacts.some((c) => c.id === contact.id)}
                     onToggleSelect={() => toggleContactSelection(contact)}
-                    onUpdate={(updatedContact) => {
+                    onUpdate={async (updatedContact) => {
                       const updatedContacts = state.contacts.map((c) =>
                         c.id === updatedContact.id ? updatedContact : c,
                       )
                       updateState({ contacts: updatedContacts })
+
+                      // Also persist the status change to the database if the contact is saved
+                      if (database.contacts.some((c) => c.id === updatedContact.id)) {
+                        await updateContactStatus(updatedContact.id, updatedContact.status, updatedContact.notes)
+                      }
                     }}
                     onDelete={() => handleDeleteContact(contact.id)}
                     onShowToast={(message, type) => {
@@ -546,6 +550,7 @@ export default function WhatsAppLinkGenerator() {
                   />
                 ))}
               </div>
+
 
               {/* Pagination Controls - Bottom */}
               {paginatedContacts.totalPages > 1 && (
