@@ -44,7 +44,7 @@ import { TemplateService } from "./services/template-service"
 
 // Utils
 import { ToastUtils } from "./utils/toast-utils"
-
+import { BackToTop } from "./components/back-to-top"
 // Types
 import type { Contact, MessageTemplate } from "./types/contact"
 
