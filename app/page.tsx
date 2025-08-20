@@ -632,6 +632,8 @@ export default function WhatsAppLinkGenerator() {
           </CardContent>
         </Card>
       </div>
+      <BackToTop />
+
     </div>
   )
 }
