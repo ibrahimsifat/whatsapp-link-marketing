@@ -36,3 +36,28 @@ export interface MessageTemplate {
   targetAudience: "all" | "with_website" | "no_website" | "category_specific"
   specificCategory?: string
 }
+
+export interface DuplicateMatch {
+  contact: Contact
+  score: number
+  reasons: string[]
+  suggestedAction: "merge" | "review" | "ignore"
+}
+
+export interface DuplicateGroup {
+  id: string
+  contacts: Contact[]
+  primaryContact: Contact
+  matches: DuplicateMatch[]
+  confidence: number
+  autoMergeRecommended: boolean
+}
+
+export interface DuplicateDetectionSettings {
+  phoneThreshold: number
+  nameThreshold: number
+  companyThreshold: number
+  websiteThreshold: number
+  autoMergeThreshold: number
+  enableAutoMerge: boolean
+}
