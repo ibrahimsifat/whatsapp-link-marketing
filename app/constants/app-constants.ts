@@ -50,7 +50,7 @@ export const APP_CONSTANTS = {
 
 export const WHATSAPP_CONSTANTS = {
   /** Base WhatsApp URL */
-  BASE_URL: "https://wa.me/",
+  BASE_URL: "https://web.whatsapp.com/send",
 
   /** Saudi Arabia country code */
   SAUDI_COUNTRY_CODE: "966",

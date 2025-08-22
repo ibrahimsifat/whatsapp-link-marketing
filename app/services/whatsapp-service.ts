@@ -11,7 +11,7 @@ export class WhatsAppService {
     // Ensure proper encoding for emojis and special characters
     const encodedMessage = encodeURIComponent(message)
 
-    return `${WHATSAPP_CONSTANTS.BASE_URL}${cleanPhone}?text=${encodedMessage}`
+    return `${WHATSAPP_CONSTANTS.BASE_URL}?phone=${cleanPhone}&text=${encodedMessage}&type=phone_number&app_absent=0`
   }
 
   /**
