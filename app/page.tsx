@@ -192,9 +192,15 @@ export default function WhatsAppLinkGenerator() {
 
       updateState({ contacts: updatedContacts })
 
-      // Update in database for saved contacts
+      const saveResult = await saveContacts(updatedContacts)
+      if (!saveResult.success) {
+        ToastUtils.error("Failed to persist bulk status update")
+        return
+      }
+
       for (const contact of selectedContacts) {
-        if (database.contacts.some((c) => c.id === contact.id)) {
+        const updatedContact = updatedContacts.find((c) => c.id === contact.id)
+        if (updatedContact) {
           await updateContactStatus(contact.id, bulkStatusUpdate.newStatus, bulkStatusUpdate.notes || contact.notes)
         }
       }
