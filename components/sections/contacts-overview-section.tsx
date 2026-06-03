@@ -57,34 +57,34 @@ export function ContactsOverviewSection({
   if (filteredContacts.length === 0) return null
 
   return (
-    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+    <Card className="border border-slate-200 bg-white shadow-none">
       <CardHeader
-        className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-t-lg border-b border-slate-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:to-blue-100 transition-all duration-200"
+        className="bg-white rounded-t-lg border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors p-4 sm:p-5"
         onClick={onToggle}
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg flex-shrink-0">
               <Building className="h-5 w-5 text-emerald-600" />
             </div>
-            <div>
-              <CardTitle className="flex items-center gap-3 text-slate-800 text-xl">
-                Business Contacts Overview
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+            <div className="min-w-0">
+              <CardTitle className="flex flex-wrap items-center gap-2 sm:gap-3 text-slate-800 text-lg sm:text-xl">
+                <span>Business Contacts Overview</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                   {filteredContacts.length} contacts
                 </span>
               </CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardDescription className="text-slate-600 text-xs sm:text-sm break-words">
                 {isExpanded
                   ? "Professional contact cards with horizontal layout for better readability"
                   : `${selectedContacts.length} selected • Page ${paginatedContacts.currentPage} of ${paginatedContacts.totalPages} • Click to expand contacts`}
               </CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <button className="inline-flex items-center px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 bg-white shadow-sm rounded-lg transition-colors">
+                <button className="inline-flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 bg-white rounded-md transition-colors">
                   <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -96,7 +96,7 @@ export function ContactsOverviewSection({
                   Clear All
                 </button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-white/95 backdrop-blur-sm">
+              <AlertDialogContent className="bg-white">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
                     <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,9 +131,9 @@ export function ContactsOverviewSection({
         </div>
       </CardHeader>
       {isExpanded && (
-        <CardContent className="p-8">
+        <CardContent className="p-3 sm:p-4 lg:p-5">
           {/* Pagination Controls - Top */}
-          <div className="mb-8">
+          <div className="mb-4">
             <Pagination
               currentPage={paginatedContacts.currentPage}
               totalPages={paginatedContacts.totalPages}
@@ -145,7 +145,7 @@ export function ContactsOverviewSection({
           </div>
 
           {/* Contact Cards */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {paginatedContacts.contacts.map((contact, index) => (
               <ContactCard
                 key={contact.id}
@@ -162,7 +162,7 @@ export function ContactsOverviewSection({
 
           {/* Pagination Controls - Bottom */}
           {paginatedContacts.totalPages > 1 && (
-            <div className="mt-8">
+            <div className="mt-4">
               <Pagination
                 currentPage={paginatedContacts.currentPage}
                 totalPages={paginatedContacts.totalPages}

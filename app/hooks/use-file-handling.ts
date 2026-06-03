@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import { FileService } from "../services/file-service"
-import { APP_CONSTANTS } from "../constants/app-constants"
 import { ToastUtils } from "../utils/toast-utils"
 import type { Contact } from "../types/contact"
 
@@ -12,9 +11,6 @@ interface FileHandlingState {
   dragActive: boolean
   fileError: string
   isLoading: boolean
-  uploadPassword: string
-  passwordError: string
-  showPassword: boolean
 }
 
 export function useFileHandling(customMessage: string, onContactsLoaded: (contacts: Contact[]) => void) {
@@ -22,9 +18,6 @@ export function useFileHandling(customMessage: string, onContactsLoaded: (contac
     dragActive: false,
     fileError: "",
     isLoading: false,
-    uploadPassword: "",
-    passwordError: "",
-    showPassword: false,
   })
 
   const updateState = (updates: Partial<FileHandlingState>) => {
@@ -46,12 +39,6 @@ export function useFileHandling(customMessage: string, onContactsLoaded: (contac
     e.stopPropagation()
     updateState({ dragActive: false })
 
-    if (state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD) {
-      updateState({ passwordError: "Incorrect password. Please enter the correct password to upload." })
-      return
-    }
-    updateState({ passwordError: "" })
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
       if (isValidFileType(file)) {
@@ -63,13 +50,6 @@ export function useFileHandling(customMessage: string, onContactsLoaded: (contac
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (state.uploadPassword !== APP_CONSTANTS.UPLOAD_PASSWORD) {
-      updateState({ passwordError: "Incorrect password. Please enter the correct password to upload." })
-      e.target.value = ""
-      return
-    }
-    updateState({ passwordError: "" })
-
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
       if (isValidFileType(file)) {

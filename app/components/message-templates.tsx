@@ -127,48 +127,48 @@ export function MessageTemplates({
   ]
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <Card className="border border-slate-200 bg-white shadow-none">
+      <CardHeader className="bg-white border-b border-slate-200 p-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <CardTitle className="flex items-center gap-2 text-purple-800 text-lg sm:text-xl">
+            <CardTitle className="flex items-center gap-2 text-slate-800 text-lg sm:text-xl">
               <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
               Message Templates
             </CardTitle>
-            <CardDescription className="text-purple-600 text-xs sm:text-sm">
+            <CardDescription className="text-slate-600 text-xs sm:text-sm">
               Pre-built templates with smart variables for different business scenarios
             </CardDescription>
           </div>
-          <Button onClick={() => setIsCreating(true)} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setIsCreating(true)} className="bg-slate-900 hover:bg-slate-800 w-full sm:w-auto h-10 sm:h-auto text-sm">
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
             New Template
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="p-4 sm:p-5">
         {/* Create New Template */}
         {isCreating && (
-          <Card className="mb-4 sm:mb-6 border-2 border-purple-200">
-            <CardHeader className="bg-purple-50 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg text-purple-800">Create New Template</CardTitle>
+          <Card className="mb-4 border border-slate-200 shadow-none">
+            <CardHeader className="bg-slate-50 p-4">
+              <CardTitle className="text-base sm:text-lg text-slate-800">Create New Template</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Template Name</Label>
+            <CardContent className="p-4 space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium">Template Name</Label>
                   <Input
                     value={newTemplate.name || ""}
                     onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                     placeholder="e.g., Welcome New Clients"
-                    className="text-sm"
+                    className="text-xs sm:text-sm h-9 sm:h-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Category</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium">Category</Label>
                   <select
                     value={newTemplate.category || "Welcome"}
                     onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md bg-white text-sm"
+                    className="w-full px-3 py-2 border rounded-md bg-white text-xs sm:text-sm h-9 sm:h-10"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -179,9 +179,9 @@ export function MessageTemplates({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Target Audience</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Target Audience</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
                   {audienceOptions.map((option) => {
                     const Icon = option.icon
                     return (
@@ -190,7 +190,7 @@ export function MessageTemplates({
                         variant={newTemplate.targetAudience === option.value ? "default" : "outline"}
                         size="sm"
                         onClick={() => setNewTemplate({ ...newTemplate, targetAudience: option.value as any })}
-                        className="justify-start text-xs sm:text-sm"
+                        className="justify-start text-xs sm:text-sm px-2"
                       >
                         <Icon className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         <span className="hidden sm:inline">{option.label}</span>
@@ -202,38 +202,38 @@ export function MessageTemplates({
               </div>
 
               {newTemplate.targetAudience === "category_specific" && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Specific Category</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium">Specific Category</Label>
                   <Input
                     value={newTemplate.specificCategory || ""}
                     onChange={(e) => setNewTemplate({ ...newTemplate, specificCategory: e.target.value })}
                     placeholder="e.g., Technology, Healthcare, Retail"
-                    className="text-sm"
+                    className="text-xs sm:text-sm h-9 sm:h-10"
                   />
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Message Content</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Message Content</Label>
                 <Textarea
                   value={newTemplate.content || ""}
                   onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
                   placeholder="Use {companyName}, {companyCategory}, {website} for personalization"
-                  rows={6}
+                  rows={4}
                   className="font-mono text-xs sm:text-sm"
                 />
-                <div className="text-xs text-gray-500">
+                <div className="text-[10px] sm:text-xs text-gray-500 break-words">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={handleCreateTemplate} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                  <Save className="h-4 w-4 mr-2" />
+                <Button onClick={handleCreateTemplate} className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto h-10 sm:h-auto text-sm">
+                  <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Save Template
                 </Button>
-                <Button variant="outline" onClick={() => setIsCreating(false)} className="w-full sm:w-auto">
-                  <X className="h-4 w-4 mr-2" />
+                <Button variant="outline" onClick={() => setIsCreating(false)} className="w-full sm:w-auto h-10 sm:h-auto text-sm">
+                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Cancel
                 </Button>
               </div>
@@ -243,26 +243,26 @@ export function MessageTemplates({
 
         {/* Edit Template */}
         {editingTemplate && (
-          <Card className="mb-4 sm:mb-6 border-2 border-blue-200">
-            <CardHeader className="bg-blue-50 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg text-blue-800">Edit Template</CardTitle>
+          <Card className="mb-4 border border-slate-200 shadow-none">
+            <CardHeader className="bg-slate-50 p-4">
+              <CardTitle className="text-base sm:text-lg text-slate-800">Edit Template</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Template Name</Label>
+            <CardContent className="p-4 space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium">Template Name</Label>
                   <Input
                     value={editingTemplate.name}
                     onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                    className="text-sm"
+                    className="text-xs sm:text-sm h-9 sm:h-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Category</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium">Category</Label>
                   <select
                     value={editingTemplate.category}
                     onChange={(e) => setEditingTemplate({ ...editingTemplate, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md bg-white text-sm"
+                    className="w-full px-3 py-2 border rounded-md bg-white text-xs sm:text-sm h-9 sm:h-10"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -273,26 +273,26 @@ export function MessageTemplates({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Message Content</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm font-medium">Message Content</Label>
                 <Textarea
                   value={editingTemplate.content}
                   onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
-                  rows={6}
+                  rows={4}
                   className="font-mono text-xs sm:text-sm"
                 />
-                <div className="text-xs text-gray-500">
+                <div className="text-[10px] sm:text-xs text-gray-500 break-words">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={handleUpdateTemplate} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                  <Save className="h-4 w-4 mr-2" />
+                <Button onClick={handleUpdateTemplate} className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto h-10 sm:h-auto text-sm">
+                  <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Update Template
                 </Button>
-                <Button variant="outline" onClick={() => setEditingTemplate(null)} className="w-full sm:w-auto">
-                  <X className="h-4 w-4 mr-2" />
+                <Button variant="outline" onClick={() => setEditingTemplate(null)} className="w-full sm:w-auto h-10 sm:h-auto text-sm">
+                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Cancel
                 </Button>
               </div>
@@ -302,31 +302,31 @@ export function MessageTemplates({
 
         {/* Template Preview Modal */}
         {previewTemplate && (
-          <Card className="mb-4 sm:mb-6 border-2 border-green-200">
-            <CardHeader className="bg-green-50 p-4 sm:p-6">
+          <Card className="mb-4 border border-slate-200 shadow-none">
+            <CardHeader className="bg-slate-50 p-3 sm:p-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base sm:text-lg text-green-800">Template Preview</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(null)}>
-                  <X className="h-4 w-4" />
+                <CardTitle className="text-sm sm:text-lg text-slate-800">Template Preview</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(null)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                <div className="bg-white p-3 sm:p-4 rounded-lg border">
-                  <h4 className="font-semibold mb-2 text-sm sm:text-base">Sample Message:</h4>
-                  <div className="whitespace-pre-wrap text-xs sm:text-sm bg-gray-50 p-3 rounded">
+            <CardContent className="p-3 sm:p-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="bg-white p-2 sm:p-4 rounded-lg border">
+                  <h4 className="font-semibold mb-1.5 sm:mb-2 text-xs sm:text-base">Sample Message:</h4>
+                  <div className="whitespace-pre-wrap text-[10px] sm:text-sm bg-gray-50 p-2 sm:p-3 rounded">
                     {previewWithSampleData(previewTemplate.content)}
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={() => onTemplateSelect(previewTemplate)}
-                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                    className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto h-9 sm:h-10 text-sm"
                   >
                     Use This Template
                   </Button>
-                  <Button variant="outline" onClick={() => setPreviewTemplate(null)} className="w-full sm:w-auto">
+                  <Button variant="outline" onClick={() => setPreviewTemplate(null)} className="w-full sm:w-auto h-9 sm:h-10 text-sm">
                     Close Preview
                   </Button>
                 </div>
@@ -336,7 +336,7 @@ export function MessageTemplates({
         )}
 
         {/* Templates Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {templates.map((template) => {
             const AudienceIcon = getAudienceIcon(template.targetAudience)
             const isSelected = selectedTemplate?.id === template.id
@@ -344,21 +344,21 @@ export function MessageTemplates({
             return (
               <Card
                 key={template.id}
-                className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                  isSelected ? "ring-2 ring-purple-500 bg-purple-50" : "hover:bg-gray-50"
+                className={`cursor-pointer transition-colors shadow-none ${
+                  isSelected ? "ring-2 ring-slate-900 bg-slate-50" : "hover:bg-slate-50"
                 }`}
               >
-                <CardContent className="p-4">
-                  <div className="space-y-3">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="space-y-2 sm:space-y-3">
                     {/* Header */}
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1 min-w-0 flex-1">
-                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{template.name}</h3>
-                        <Badge variant="secondary" className="text-xs">
+                        <h3 className="font-semibold text-gray-900 text-xs sm:text-base break-words">{template.name}</h3>
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
                           {template.category}
                         </Badge>
                       </div>
-                      <div className="flex gap-1 ml-2">
+                      <div className="flex gap-1 flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -366,9 +366,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setPreviewTemplate(template)
                           }}
-                          className="h-6 w-6 sm:h-8 sm:w-8 p-0"
+                          className="h-5 w-5 sm:h-8 sm:w-8 p-0"
                         >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <Eye className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -377,9 +377,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setEditingTemplate(template)
                           }}
-                          className="h-6 w-6 sm:h-8 sm:w-8 p-0"
+                          className="h-5 w-5 sm:h-8 sm:w-8 p-0"
                         >
-                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <Edit className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -388,15 +388,15 @@ export function MessageTemplates({
                             e.stopPropagation()
                             onTemplateDelete(template.id)
                           }}
-                          className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
+                          className="h-5 w-5 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <Trash2 className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </div>
 
                     {/* Target Audience */}
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm text-gray-600">
                       <AudienceIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span className="truncate">{getAudienceLabel(template)}</span>
                     </div>
@@ -404,15 +404,15 @@ export function MessageTemplates({
                     {/* Variables */}
                     {template.variables.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-gray-500">Variables:</p>
-                        <div className="flex flex-wrap gap-1">
+                        <p className="text-[10px] sm:text-xs font-medium text-gray-500">Variables:</p>
+                        <div className="flex flex-wrap gap-1 min-w-0">
                           {template.variables.slice(0, 3).map((variable, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
+                            <Badge key={index} variant="outline" className="text-[10px] sm:text-xs max-w-full whitespace-normal break-words">
                               {variable}
                             </Badge>
                           ))}
                           {template.variables.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs">
                               +{template.variables.length - 3} more
                             </Badge>
                           )}
@@ -421,15 +421,15 @@ export function MessageTemplates({
                     )}
 
                     {/* Content Preview */}
-                    <div className="text-xs sm:text-sm text-gray-600 line-clamp-3">
+                    <div className="text-[10px] sm:text-sm text-gray-600 line-clamp-3">
                       {template.content.substring(0, 100)}...
                     </div>
 
                     {/* Action Button */}
                     <Button
                       onClick={() => onTemplateSelect(template)}
-                      className={`w-full text-xs sm:text-sm ${
-                        isSelected ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-600 hover:bg-gray-700"
+                      className={`w-full text-[10px] sm:text-sm h-8 sm:h-9 ${
+                        isSelected ? "bg-slate-900 hover:bg-slate-800" : "bg-slate-700 hover:bg-slate-800"
                       }`}
                       size="sm"
                     >

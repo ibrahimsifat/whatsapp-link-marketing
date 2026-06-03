@@ -314,31 +314,31 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-2 border-blue-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardTitle className="flex items-center gap-2 text-blue-800">
-            <FileSpreadsheet className="h-6 w-6" />
+    <div className="space-y-3 sm:space-y-4">
+      <Card className="border border-slate-200 bg-white shadow-none">
+        <CardHeader className="bg-white border-b border-slate-200 p-4">
+          <CardTitle className="flex items-center gap-2 text-slate-800 text-base sm:text-lg">
+            <FileSpreadsheet className="h-5 w-5 sm:h-6 sm:w-6" />
             Google Sheets Import
           </CardTitle>
-          <CardDescription className="text-blue-600">
+          <CardDescription className="text-slate-600 text-xs sm:text-sm">
             Import contacts directly from a public Google Sheets document
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
-          <Tabs defaultValue="import" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="import">Import Data</TabsTrigger>
-              <TabsTrigger value="setup">Setup Guide</TabsTrigger>
+        <CardContent className="p-4 sm:p-5">
+          <Tabs defaultValue="import" className="space-y-3 sm:space-y-4">
+            <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+              <TabsTrigger value="import" className="text-xs sm:text-sm">Import Data</TabsTrigger>
+              <TabsTrigger value="setup" className="text-xs sm:text-sm">Setup Guide</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="import" className="space-y-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sheet-url" className="text-sm font-medium">
+            <TabsContent value="import" className="space-y-3 sm:space-y-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="sheet-url" className="text-xs sm:text-sm font-medium">
                     Google Sheets URL
                   </Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       id="sheet-url"
                       type="url"
@@ -348,21 +348,21 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
                         setImportError("")
                       }}
                       placeholder="https://docs.google.com/spreadsheets/d/..."
-                      className="flex-1"
+                      className="flex-1 h-10"
                     />
                     <Button
                       onClick={handleImport}
                       disabled={isImporting || !sheetUrl.trim()}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-slate-900 hover:bg-slate-800 text-xs sm:text-sm h-10 w-full sm:w-auto"
                     >
                       {isImporting ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" />
                           Importing...
                         </>
                       ) : (
                         <>
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                           Import
                         </>
                       )}
@@ -374,76 +374,76 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
                 </div>
 
                 {lastImportUrl && (
-                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700">Last import successful</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
+                      <span className="text-xs sm:text-sm text-emerald-700">Last import successful</span>
                     </div>
                     <Button
                       onClick={handleUpdate}
                       disabled={isImporting}
                       variant="outline"
                       size="sm"
-                      className="border-green-300 text-green-700 hover:bg-green-100 bg-transparent"
+                      className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 bg-transparent h-7 sm:h-8 text-[10px] sm:text-xs"
                     >
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                       Update
                     </Button>
                   </div>
                 )}
 
                 {importError && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-700">{importError}</AlertDescription>
+                  <Alert className="border-red-200 bg-red-50 p-3 sm:p-4">
+                    <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+                    <AlertDescription className="text-red-700 text-xs sm:text-sm">{importError}</AlertDescription>
                   </Alert>
                 )}
 
                 {importStats && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{importStats.total}</div>
-                      <div className="text-xs text-gray-600">Total Rows</div>
+                      <div className="text-lg sm:text-xl font-semibold text-emerald-600">{importStats.total}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-600">Total Rows</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{importStats.successful}</div>
-                      <div className="text-xs text-gray-600">Imported</div>
+                      <div className="text-lg sm:text-xl font-semibold text-emerald-600">{importStats.successful}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-600">Imported</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-600">{importStats.duplicates}</div>
-                      <div className="text-xs text-gray-600">Duplicates</div>
+                      <div className="text-lg sm:text-xl font-semibold text-amber-600">{importStats.duplicates}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-600">Duplicates</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">{importStats.errors}</div>
-                      <div className="text-xs text-gray-600">Errors</div>
+                      <div className="text-lg sm:text-xl font-semibold text-red-600">{importStats.errors}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-600">Errors</div>
                     </div>
                   </div>
                 )}
 
                 <Separator />
 
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Try with Example Sheet</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between gap-2">
+                <div className="space-y-2 sm:space-y-3">
+                  <h4 className="font-medium text-gray-900 text-sm sm:text-base">Try with Example Sheet</h4>
+                  <div className="p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-600 mb-1">Example Google Sheet:</p>
-                        <p className="text-sm font-mono text-gray-800 truncate">{exampleUrl}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1">Example Google Sheet:</p>
+                        <p className="text-xs sm:text-sm font-mono text-gray-800 truncate">{exampleUrl}</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 w-full sm:w-auto">
                         <Button
                           onClick={copyExampleUrl}
                           variant="outline"
                           size="sm"
-                          className="flex-shrink-0 bg-transparent"
+                          className="flex-1 sm:flex-none bg-transparent h-8 p-2"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           onClick={() => setSheetUrl(exampleUrl)}
                           variant="outline"
                           size="sm"
-                          className="flex-shrink-0"
+                          className="flex-1 sm:flex-none h-8 text-xs"
                         >
                           Use Example
                         </Button>
@@ -454,73 +454,73 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
               </div>
             </TabsContent>
 
-            <TabsContent value="setup" className="space-y-4">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Setup Instructions</h3>
+            <TabsContent value="setup" className="space-y-3 sm:space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Setup Instructions</h3>
 
-                  <div className="space-y-4">
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="space-y-3">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold">
                         1
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">Prepare Your Google Sheet</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">Prepare Your Google Sheet</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           Create a Google Sheet with the following columns (case-insensitive):
                         </p>
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          <Badge variant="outline" className="justify-start">
-                            <Phone className="h-3 w-3 mr-1" />
+                        <div className="mt-1.5 sm:mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <Phone className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                             Phone/Mobile/Tel
                           </Badge>
-                          <Badge variant="outline" className="justify-start">
-                            <Building className="h-3 w-3 mr-1" />
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <Building className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                             Company/Business
                           </Badge>
-                          <Badge variant="outline" className="justify-start">
-                            <Tag className="h-3 w-3 mr-1" />
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                             Category/Type
                           </Badge>
-                          <Badge variant="outline" className="justify-start">
-                            <Globe className="h-3 w-3 mr-1" />
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <Globe className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                             Website/URL
                           </Badge>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold">
                         2
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">Make Sheet Public</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">Make Sheet Public</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           Click "Share" → "Change to anyone with the link" → "Viewer"
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold">
                         3
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">Copy the URL</h4>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">Copy the URL</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           Copy the full Google Sheets URL from your browser's address bar
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-bold">
                         4
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">Import Data</h4>
-                        <p className="text-sm text-gray-600 mt-1">Paste the URL in the import tab and click "Import"</p>
+                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">Import Data</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">Paste the URL in the import tab and click "Import"</p>
                       </div>
                     </div>
                   </div>
@@ -528,31 +528,31 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
 
                 <Separator />
 
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                    <HelpCircle className="h-4 w-4" />
+                <div className="space-y-2 sm:space-y-3">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+                    <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Troubleshooting
                   </h4>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex gap-2">
+                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <span className="text-red-600">•</span>
                       <span>
                         <strong>400 Error:</strong> Make sure the sheet is publicly accessible
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <span className="text-red-600">•</span>
                       <span>
                         <strong>403 Error:</strong> Check sharing permissions (Anyone with link can view)
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <span className="text-red-600">•</span>
                       <span>
                         <strong>No data found:</strong> Ensure you have a header row and at least one data row
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <span className="text-red-600">•</span>
                       <span>
                         <strong>Phone column missing:</strong> Include a column with "phone", "mobile", "tel", or
@@ -562,9 +562,9 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">💡 Pro Tips</h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <h4 className="font-medium text-slate-900 mb-2">Pro Tips</h4>
+                  <ul className="text-sm text-slate-700 space-y-1">
                     <li>• Add custom columns for personalized messaging (e.g., Contact Person, Location)</li>
                     <li>• Use consistent phone number formats (Saudi numbers: 05XXXXXXXX or +966XXXXXXXXX)</li>
                     <li>• Include website URLs for better business targeting</li>

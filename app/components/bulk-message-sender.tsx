@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useMemo, useState } from "react"
+import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -16,30 +17,25 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Send,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  MessageCircle,
   Pause,
   Play,
-  Square,
+  Send,
   Settings,
-  Clock,
-  Users,
-  CheckCircle,
-  XCircle,
   Shield,
-  Timer,
-  MessageCircle,
-  BarChart3,
-  AlertTriangle,
-  Zap,
-  Eye,
+  Square,
+  Users,
+  XCircle,
 } from "lucide-react"
 import type { Contact, MessageTemplate } from "../types/contact"
 import {
   EnhancedBulkMessageService,
-  type BulkMessageSettings,
   type BulkMessageProgress,
+  type BulkMessageSettings,
 } from "../services/enhanced-bulk-message-service"
 
 interface BulkMessageSenderProps {
@@ -55,44 +51,58 @@ interface BulkMessageSenderProps {
 export function BulkMessageSender({
   contacts,
   selectedContacts,
-  templates,
   selectedTemplate,
   customMessage,
   onContactStatusUpdate,
   onShowToast,
 }: BulkMessageSenderProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [progress, setProgress] = useState<BulkMessageProgress | null>(null)
   const [settings, setSettings] = useState<BulkMessageSettings>(EnhancedBulkMessageService.getSettings())
-  const [previewMessage, setPreviewMessage] = useState("")
-  const [activeTab, setActiveTab] = useState("overview")
 
-  const targetContacts = selectedContacts.length > 0 ? selectedContacts : contacts.filter((c) => c.status !== "sent")
+  const targetContacts = selectedContacts.length > 0 ? selectedContacts : contacts.filter((contact) => contact.status !== "sent")
   const validation = EnhancedBulkMessageService.validateContacts(targetContacts)
   const rateLimitStatus = EnhancedBulkMessageService.getRateLimitStatus()
   const businessHoursStatus = EnhancedBulkMessageService.getBusinessHoursStatus()
 
-  // Generate preview message
-  const generatePreview = useCallback(() => {
-    if (targetContacts.length > 0) {
-      const sampleContact = targetContacts[0]
-      let preview = customMessage
-        .replace(/{companyName}/g, sampleContact.companyName || "[Company Name]")
-        .replace(/{companyCategory}/g, sampleContact.companyCategory || "[Category]")
-        .replace(/{website}/g, sampleContact.website || "[Website]")
-        .replace(/{phone}/g, sampleContact.phone || "[Phone]")
+  const estimatedTime = useMemo(() => {
+    const delay = settings.delayBetweenMessages + settings.randomDelayRange / 2
+    const batches = Math.max(1, Math.ceil(validation.valid.length / Math.max(1, settings.batchSize)))
+    const batchBreaks = Math.max(0, batches - 1) * settings.batchDelayMinutes * 60 * 1000
+    return validation.valid.length * delay + batchBreaks
+  }, [settings.batchDelayMinutes, settings.batchSize, settings.delayBetweenMessages, settings.randomDelayRange, validation.valid.length])
 
-      // Replace dynamic data
-      if (sampleContact.dynamicData) {
-        Object.entries(sampleContact.dynamicData).forEach(([key, value]) => {
-          const regex = new RegExp(`{${key}}`, "g")
-          preview = preview.replace(regex, String(value || `[${key}]`))
-        })
-      }
+  const previewMessage = useMemo(() => {
+    const sampleContact = validation.valid[0] || targetContacts[0]
+    if (!sampleContact || !customMessage.trim()) return ""
 
-      setPreviewMessage(preview)
+    let preview = customMessage
+      .replace(/{companyName}/g, sampleContact.companyName || "[Company Name]")
+      .replace(/{companyCategory}/g, sampleContact.companyCategory || "[Category]")
+      .replace(/{website}/g, sampleContact.website || "[Website]")
+      .replace(/{phone}/g, sampleContact.normalized || sampleContact.original || "[Phone]")
+
+    if (sampleContact.dynamicData) {
+      Object.entries(sampleContact.dynamicData).forEach(([key, value]) => {
+        preview = preview.replace(new RegExp(`{${key}}`, "g"), String(value || `[${key}]`))
+      })
     }
-  }, [customMessage, targetContacts])
+
+    return preview
+  }, [customMessage, targetContacts, validation.valid])
+
+  const updateSettings = (newSettings: Partial<BulkMessageSettings>) => {
+    const updatedSettings = { ...settings, ...newSettings }
+    setSettings(updatedSettings)
+    EnhancedBulkMessageService.updateSettings(updatedSettings)
+  }
+
+  const formatDuration = (ms: number) => {
+    const minutes = Math.max(1, Math.round(ms / 60000))
+    if (minutes < 60) return `${minutes} min`
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+  }
 
   const handleStartBulkSend = async () => {
     if (!customMessage.trim()) {
@@ -105,62 +115,26 @@ export function BulkMessageSender({
       return
     }
 
-    // Check business hours and show warning if needed
-    let proceedWithSend = true
-
-    if (settings.respectBusinessHours && !businessHoursStatus.isWithinHours) {
-      const businessHoursWarning = businessHoursStatus.isWeekend
-        ? `⏰ WEEKEND DETECTED\n\nIt's currently ${new Date().toLocaleString()}.\nBusiness hours are ${settings.businessHoursStart}:00 - ${settings.businessHoursEnd}:00 on weekdays.\n\nNext business hours: ${businessHoursStatus.nextBusinessHour}\n\nDo you want to proceed anyway?`
-        : `⏰ OUTSIDE BUSINESS HOURS\n\nCurrent time: ${new Date().toLocaleTimeString()}\nBusiness hours: ${settings.businessHoursStart}:00 - ${settings.businessHoursEnd}:00\n\nNext business hours: ${businessHoursStatus.nextBusinessHour}\n\nDo you want to proceed anyway?`
-
-      proceedWithSend = window.confirm(businessHoursWarning)
-    }
-
-    if (!proceedWithSend) {
-      onShowToast("Bulk sending cancelled - outside business hours", "info")
-      return
-    }
-
-    // Show comprehensive warning
     const confirmed = window.confirm(
-      `⚠️ PROFESSIONAL WHATSAPP BULK MESSAGING ⚠️\n\n` +
-        `You are about to send ${validation.valid.length} personalized messages.\n\n` +
-        `🛡️ SAFETY FEATURES ACTIVE:\n` +
-        `• Smart delays: ${settings.delayBetweenMessages / 1000}s base + randomization\n` +
-        `• Rate limiting: Max ${settings.maxMessagesPerHour}/hour, ${settings.maxMessagesPerDay}/day\n` +
-        `• Batch processing: ${settings.batchSize} messages per batch\n` +
-        `• Business hours: ${settings.respectBusinessHours ? (businessHoursStatus.isWithinHours ? "WITHIN HOURS" : "OVERRIDE ACTIVE") : "DISABLED"}\n` +
-        `• Anti-spam mode: ${settings.enableAntiSpamMode ? "ENABLED" : "DISABLED"}\n` +
-        `• Human behavior: ${settings.humanLikeBehavior ? "ENABLED" : "DISABLED"}\n\n` +
-        `📱 Each message opens in WhatsApp Web - you must manually click 'Send'.\n` +
-        `⏱️ Estimated time: ${EnhancedBulkMessageService.formatEstimatedTime(
-          EnhancedBulkMessageService.estimateTotalTime(validation.valid.length),
-        )}\n\n` +
-        `Continue with professional bulk messaging?`,
+      `Start bulk sending to ${validation.valid.length} contacts?\n\nEach WhatsApp chat will open and you will manually confirm the send.`,
     )
 
     if (!confirmed) return
 
     try {
-      await EnhancedBulkMessageService.sendBulkMessages(
+      const result = await EnhancedBulkMessageService.sendBulkMessages(
         validation.valid,
         customMessage,
         settings,
-        (progressUpdate) => {
-          setProgress(progressUpdate)
-        },
+        setProgress,
         async (updatedContact) => {
           await onContactStatusUpdate(updatedContact.id, updatedContact.status)
         },
       )
 
-      onShowToast(
-        `✅ Bulk messaging completed! Sent: ${progress?.sent || 0}, Failed: ${progress?.failed || 0}`,
-        "success",
-      )
+      onShowToast(`Bulk messaging finished. Sent: ${result.successful}, Failed: ${result.failed}`, "success")
     } catch (error) {
-      console.error("Bulk send error:", error)
-      onShowToast("❌ Bulk messaging failed: " + (error instanceof Error ? error.message : "Unknown error"), "error")
+      onShowToast(error instanceof Error ? error.message : "Bulk messaging failed", "error")
     } finally {
       setProgress(null)
     }
@@ -168,618 +142,345 @@ export function BulkMessageSender({
 
   const handlePause = () => {
     EnhancedBulkMessageService.pause()
-    onShowToast("⏸️ Bulk messaging paused", "info")
+    onShowToast("Bulk messaging paused", "info")
   }
 
   const handleResume = () => {
     EnhancedBulkMessageService.resume()
-    onShowToast("▶️ Bulk messaging resumed", "info")
+    onShowToast("Bulk messaging resumed", "info")
   }
 
   const handleStop = () => {
     EnhancedBulkMessageService.stop()
     setProgress(null)
-    onShowToast("⏹️ Bulk messaging stopped", "info")
-  }
-
-  const updateSettings = (newSettings: Partial<BulkMessageSettings>) => {
-    const updatedSettings = { ...settings, ...newSettings }
-    setSettings(updatedSettings)
-    EnhancedBulkMessageService.updateSettings(updatedSettings)
-  }
-
-  const formatTime = (minutes: number): string => {
-    if (minutes < 1) return "< 1 min"
-    if (minutes < 60) return `${Math.round(minutes)} min`
-    const hours = Math.floor(minutes / 60)
-    const mins = Math.round(minutes % 60)
-    return `${hours}h ${mins}m`
+    onShowToast("Bulk messaging stopped", "info")
   }
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button
-          onClick={generatePreview}
-          className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          className="w-full sm:w-auto justify-center bg-emerald-600 text-white shadow-none hover:bg-emerald-700"
           disabled={targetContacts.length === 0}
         >
           <Send className="h-4 w-4 mr-2" />
-          Professional Bulk Send ({targetContacts.length})
+          Bulk Send ({targetContacts.length})
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden">
-        <DialogHeader className="border-b pb-4">
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-3 bg-gradient-to-r from-emerald-100 to-blue-100 rounded-xl">
-              <MessageCircle className="h-6 w-6 text-emerald-600" />
-            </div>
-            Professional WhatsApp Bulk Messenger
+      <DialogContent className="max-w-4xl w-[calc(100vw-1rem)] max-h-[92dvh] overflow-hidden p-0">
+        <DialogHeader className="border-b px-4 py-4 sm:px-6">
+          <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50">
+              <MessageCircle className="h-5 w-5 text-emerald-600" />
+            </span>
+            WhatsApp Bulk Messenger
           </DialogTitle>
-          <DialogDescription className="text-base">
-            Enterprise-grade bulk messaging with advanced anti-spam protection and professional timing controls
+          <DialogDescription className="text-sm">
+            Review contacts, preview the message, adjust timing, then open WhatsApp chats one by one.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Preview
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center gap-2">
-              <Timer className="h-4 w-4" />
-              Progress
-            </TabsTrigger>
-          </TabsList>
+        <div className="max-h-[calc(92dvh-158px)] overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SummaryTile label="Ready" value={validation.valid.length} icon={<Users className="h-4 w-4" />} />
+            <SummaryTile label="Skipped" value={validation.invalid.length} tone="danger" icon={<XCircle className="h-4 w-4" />} />
+            <SummaryTile label="Estimated" value={formatDuration(estimatedTime)} icon={<Clock className="h-4 w-4" />} />
+          </div>
 
-          <div className="overflow-y-auto max-h-[60vh]">
-            <TabsContent value="overview" className="space-y-6">
-              {/* Safety Status */}
-              <Alert className="border-emerald-200 bg-emerald-50">
-                <Shield className="h-4 w-4 text-emerald-600" />
-                <AlertDescription className="text-emerald-800">
-                  <strong>WhatsApp Safety Protocol Active:</strong> Advanced anti-spam protection, rate limiting, and
-                  human-like behavior patterns are enabled to protect your account.
-                </AlertDescription>
-              </Alert>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Message Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2 text-xs text-emerald-700">
+                    <span>{selectedTemplate ? selectedTemplate.name : "Custom message"}</span>
+                    <span>{validation.valid[0]?.companyName || validation.valid[0]?.normalized || "Sample contact"}</span>
+                  </div>
+                  <div className="max-h-52 overflow-y-auto rounded-lg border bg-white p-3 text-sm leading-6 text-slate-800">
+                    {previewMessage || "Write a message first to see the preview."}
+                  </div>
+                </div>
 
-              {settings.respectBusinessHours && !businessHoursStatus.isWithinHours && (
-                <Alert className="border-orange-200 bg-orange-50">
-                  <Clock className="h-4 w-4 text-orange-600" />
-                  <AlertDescription className="text-orange-800">
-                    <strong>Outside Business Hours:</strong>{" "}
-                    {businessHoursStatus.isWeekend
-                      ? "It's currently weekend."
-                      : `Current time is ${businessHoursStatus.currentHour}:00.`}{" "}
-                    Business hours are {settings.businessHoursStart}:00 - {settings.businessHoursEnd}:00 on weekdays.
-                    You can still send messages, but they may be less effective.
+                {validation.invalid.length > 0 && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-sm text-amber-800">
+                      {validation.invalid.length} contacts will be skipped because the number is missing, invalid, or duplicated.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Sending Setup</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Alert className="border-emerald-200 bg-emerald-50">
+                  <Shield className="h-4 w-4 text-emerald-600" />
+                  <AlertDescription className="text-sm text-emerald-800">
+                    Conservative delays and batch pauses help keep sending steady and easier to manage.
                   </AlertDescription>
                 </Alert>
-              )}
 
-              {/* Rate Limit Status */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Rate Limit Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {rateLimitStatus.messagesThisHour}/{rateLimitStatus.maxMessagesPerHour}
-                      </div>
-                      <div className="text-sm text-blue-600">This Hour</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {rateLimitStatus.messagesThisDay}/{rateLimitStatus.maxMessagesPerDay}
-                      </div>
-                      <div className="text-sm text-purple-600">Today</div>
-                    </div>
-                    <div className="text-center p-4 bg-orange-50 rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">{rateLimitStatus.consecutiveMessages}</div>
-                      <div className="text-sm text-orange-600">Consecutive</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        {businessHoursStatus.isWithinHours ? "✓" : "⚠️"}
-                      </div>
-                      <div className="text-sm text-green-600">
-                        {businessHoursStatus.isWeekend
-                          ? "Weekend"
-                          : businessHoursStatus.isWithinHours
-                            ? "Business Hours"
-                            : "After Hours"}
-                      </div>
-                      {!businessHoursStatus.isWithinHours && settings.respectBusinessHours && (
-                        <div className="text-xs text-orange-600 mt-1">Next: {businessHoursStatus.nextBusinessHour}</div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <InfoRow label="Per hour" value={`${rateLimitStatus.messagesThisHour}/${rateLimitStatus.maxMessagesPerHour}`} />
+                  <InfoRow label="Today" value={`${rateLimitStatus.messagesThisDay}/${rateLimitStatus.maxMessagesPerDay}`} />
+                  <InfoRow label="Batch size" value={settings.batchSize} />
+                  <InfoRow label="Business hours" value={businessHoursStatus.isWithinHours ? "Now" : "Later"} />
+                </div>
 
-              {/* Contact Statistics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Contact Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-3xl font-bold text-blue-600">{targetContacts.length}</div>
-                      <div className="text-sm text-blue-600">Total Selected</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">{validation.valid.length}</div>
-                      <div className="text-sm text-green-600">Valid Contacts</div>
-                    </div>
-                    <div className="text-center p-4 bg-red-50 rounded-lg">
-                      <div className="text-3xl font-bold text-red-600">{validation.invalid.length}</div>
-                      <div className="text-sm text-red-600">Invalid/Skipped</div>
-                    </div>
-                  </div>
+                {!businessHoursStatus.isWithinHours && settings.respectBusinessHours && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                    Outside business hours. Next suggested time: {businessHoursStatus.nextBusinessHour}.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-                  {validation.invalid.length > 0 && (
-                    <Alert className="mt-4 border-amber-200 bg-amber-50">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-amber-800">
-                        <strong>{validation.invalid.length} contacts will be skipped</strong> due to validation errors
-                        (invalid phone numbers, duplicates, or missing data).
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <button
+                type="button"
+                onClick={() => setShowSettings((value) => !value)}
+                className="flex w-full items-center justify-between text-left"
+              >
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Settings className="h-4 w-4 text-emerald-600" />
+                  Simple Settings
+                </CardTitle>
+                <span className="text-sm text-emerald-700">{showSettings ? "Hide" : "Edit"}</span>
+              </button>
+            </CardHeader>
 
-              {/* Recommendations */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
-                    Anti-Spam Recommendations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {EnhancedBulkMessageService.getAntiSpamRecommendations(validation.valid.length).map(
-                      (recommendation, index) => (
-                        <div key={index} className="flex items-start gap-2 text-sm">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <span>{recommendation}</span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {showSettings && (
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <NumberField
+                    id="delay"
+                    label="Delay"
+                    suffix="sec"
+                    min={2}
+                    max={30}
+                    value={settings.delayBetweenMessages / 1000}
+                    onChange={(value) => updateSettings({ delayBetweenMessages: value * 1000 })}
+                  />
+                  <NumberField
+                    id="batch-size"
+                    label="Batch size"
+                    min={5}
+                    max={50}
+                    value={settings.batchSize}
+                    onChange={(value) => updateSettings({ batchSize: value })}
+                  />
+                  <NumberField
+                    id="batch-delay"
+                    label="Batch pause"
+                    suffix="min"
+                    min={1}
+                    max={60}
+                    value={settings.batchDelayMinutes}
+                    onChange={(value) => updateSettings({ batchDelayMinutes: value })}
+                  />
+                  <NumberField
+                    id="daily-limit"
+                    label="Daily limit"
+                    min={50}
+                    max={1000}
+                    value={settings.maxMessagesPerDay}
+                    onChange={(value) => updateSettings({ maxMessagesPerDay: value })}
+                  />
+                </div>
 
-            <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Timing & Rate Limiting</CardTitle>
-                  <CardDescription>Configure delays and limits to avoid being flagged as spam</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="delay">Base Delay Between Messages (seconds)</Label>
-                      <Input
-                        id="delay"
-                        type="number"
-                        min="2"
-                        max="30"
-                        value={settings.delayBetweenMessages / 1000}
-                        onChange={(e) =>
-                          updateSettings({
-                            delayBetweenMessages: Number.parseInt(e.target.value) * 1000,
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Recommended: 5-8 seconds for safety</p>
-                    </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <ToggleRow
+                    id="business-hours"
+                    label="Business hours"
+                    checked={settings.respectBusinessHours}
+                    onCheckedChange={(checked) => updateSettings({ respectBusinessHours: checked })}
+                  />
+                  <ToggleRow
+                    id="anti-spam"
+                    label="Anti-spam mode"
+                    checked={settings.enableAntiSpamMode}
+                    onCheckedChange={(checked) => updateSettings({ enableAntiSpamMode: checked })}
+                  />
+                  <ToggleRow
+                    id="human-like"
+                    label="Human-like timing"
+                    checked={settings.humanLikeBehavior}
+                    onCheckedChange={(checked) => updateSettings({ humanLikeBehavior: checked })}
+                  />
+                </div>
+              </CardContent>
+            )}
+          </Card>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="randomRange">Random Delay Range (±seconds)</Label>
-                      <Input
-                        id="randomRange"
-                        type="number"
-                        min="0"
-                        max="10"
-                        value={settings.randomDelayRange / 1000}
-                        onChange={(e) =>
-                          updateSettings({
-                            randomDelayRange: Number.parseInt(e.target.value) * 1000,
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Adds randomization to appear more human</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="maxHourly">Max Messages Per Hour</Label>
-                      <Input
-                        id="maxHourly"
-                        type="number"
-                        min="10"
-                        max="200"
-                        value={settings.maxMessagesPerHour}
-                        onChange={(e) =>
-                          updateSettings({
-                            maxMessagesPerHour: Number.parseInt(e.target.value),
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Conservative limit to avoid rate limiting</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="maxDaily">Max Messages Per Day</Label>
-                      <Input
-                        id="maxDaily"
-                        type="number"
-                        min="50"
-                        max="1000"
-                        value={settings.maxMessagesPerDay}
-                        onChange={(e) =>
-                          updateSettings({
-                            maxMessagesPerDay: Number.parseInt(e.target.value),
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Daily safety limit</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Batch Processing</CardTitle>
-                  <CardDescription>Process messages in batches with cooldown periods</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="batchSize">Messages Per Batch</Label>
-                      <Input
-                        id="batchSize"
-                        type="number"
-                        min="5"
-                        max="50"
-                        value={settings.batchSize}
-                        onChange={(e) =>
-                          updateSettings({
-                            batchSize: Number.parseInt(e.target.value),
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Smaller batches are safer</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="batchDelay">Delay Between Batches (minutes)</Label>
-                      <Input
-                        id="batchDelay"
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={settings.batchDelayMinutes}
-                        onChange={(e) =>
-                          updateSettings({
-                            batchDelayMinutes: Number.parseInt(e.target.value),
-                          })
-                        }
-                      />
-                      <p className="text-xs text-gray-500">Rest period between batches</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Safety Features</CardTitle>
-                  <CardDescription>Advanced protection against spam detection</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="business-hours">Respect Business Hours</Label>
-                      <p className="text-sm text-gray-500">Only send during business hours</p>
-                    </div>
-                    <Switch
-                      id="business-hours"
-                      checked={settings.respectBusinessHours}
-                      onCheckedChange={(checked) =>
-                        updateSettings({
-                          respectBusinessHours: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="anti-spam">Enable Anti-Spam Mode</Label>
-                      <p className="text-sm text-gray-500">Advanced spam prevention</p>
-                    </div>
-                    <Switch
-                      id="anti-spam"
-                      checked={settings.enableAntiSpamMode}
-                      onCheckedChange={(checked) =>
-                        updateSettings({
-                          enableAntiSpamMode: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="human-behavior">Human-Like Behavior</Label>
-                      <p className="text-sm text-gray-500">Simulate human sending patterns</p>
-                    </div>
-                    <Switch
-                      id="human-behavior"
-                      checked={settings.humanLikeBehavior}
-                      onCheckedChange={(checked) =>
-                        updateSettings({
-                          humanLikeBehavior: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  {settings.respectBusinessHours && (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="start-hour">Business Hours Start</Label>
-                        <Input
-                          id="start-hour"
-                          type="number"
-                          min="0"
-                          max="23"
-                          value={settings.businessHoursStart}
-                          onChange={(e) =>
-                            updateSettings({
-                              businessHoursStart: Number.parseInt(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="end-hour">Business Hours End</Label>
-                        <Input
-                          id="end-hour"
-                          type="number"
-                          min="0"
-                          max="23"
-                          value={settings.businessHoursEnd}
-                          onChange={(e) =>
-                            updateSettings({
-                              businessHoursEnd: Number.parseInt(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="preview" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Message Preview</CardTitle>
-                  <CardDescription>Preview how your message will appear to recipients</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <MessageCircle className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-800">WhatsApp Message Preview</span>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 border shadow-sm">
-                      <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">
-                        {previewMessage || "No message preview available"}
-                      </pre>
-                    </div>
-                  </div>
-
-                  {targetContacts.length > 1 && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600 mb-2">Sample previews for first 3 contacts:</p>
-                      <div className="space-y-2">
-                        {targetContacts.slice(0, 3).map((contact, index) => (
-                          <div key={index} className="bg-gray-50 rounded p-3 text-sm">
-                            <div className="font-medium text-gray-700 mb-1">{contact.companyName || contact.phone}</div>
-                            <div className="text-gray-600 text-xs">
-                              {customMessage
-                                .replace(/{companyName}/g, contact.companyName || "[Company Name]")
-                                .replace(/{companyCategory}/g, contact.companyCategory || "[Category]")
-                                .replace(/{website}/g, contact.website || "[Website]")
-                                .substring(0, 100)}
-                              ...
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="progress" className="space-y-6">
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Progress</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               {progress ? (
                 <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Timer className="h-5 w-5" />
-                        Sending Progress
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>
-                            {progress.current} / {progress.total} ({progress.percentage}%)
-                          </span>
-                        </div>
-                        <Progress value={progress.percentage} className="h-3" />
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="flex items-center justify-center gap-1 text-green-600">
-                            <CheckCircle className="h-4 w-4" />
-                            <span className="font-semibold text-lg">{progress.sent}</span>
-                          </div>
-                          <div className="text-xs text-green-600">Sent</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-red-50 rounded-lg">
-                          <div className="flex items-center justify-center gap-1 text-red-600">
-                            <XCircle className="h-4 w-4" />
-                            <span className="font-semibold text-lg">{progress.failed}</span>
-                          </div>
-                          <div className="text-xs text-red-600">Failed</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="flex items-center justify-center gap-1 text-blue-600">
-                            <Users className="h-4 w-4" />
-                            <span className="font-semibold text-lg">{progress.remaining}</span>
-                          </div>
-                          <div className="text-xs text-blue-600">Remaining</div>
-                        </div>
-
-                        <div className="text-center p-3 bg-purple-50 rounded-lg">
-                          <div className="flex items-center justify-center gap-1 text-purple-600">
-                            <Clock className="h-4 w-4" />
-                            <span className="font-semibold text-lg">
-                              {formatTime(progress.estimatedTimeRemaining / 60000)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-purple-600">ETA</div>
-                        </div>
-                      </div>
-
-                      {progress.currentContact && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                            <span className="font-medium text-blue-800">Currently Processing</span>
-                          </div>
-                          <div className="text-sm text-blue-700">
-                            <div className="font-medium">{progress.currentContact.companyName}</div>
-                            <div className="text-xs">{progress.currentContact.phone}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {progress.nextBatchIn > 0 && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Clock className="h-4 w-4 text-orange-600" />
-                            <span className="font-medium text-orange-800">Batch Cooldown</span>
-                          </div>
-                          <div className="text-sm text-orange-700">
-                            Next batch in: {Math.ceil(progress.nextBatchIn / 1000)} seconds
-                          </div>
-                        </div>
-                      )}
-
-                      {progress.errors.length > 0 && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <XCircle className="h-4 w-4 text-red-600" />
-                            <span className="font-medium text-red-800">Recent Errors ({progress.errors.length})</span>
-                          </div>
-                          <div className="space-y-1 max-h-32 overflow-y-auto">
-                            {progress.errors.slice(-5).map((error, index) => (
-                              <div key={index} className="text-xs text-red-600">
-                                <span className="font-medium">{error.contact.companyName}:</span> {error.error}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{progress.current} of {progress.total}</span>
+                    <span>{progress.percentage}%</span>
+                  </div>
+                  <Progress value={progress.percentage} className="h-2" />
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <SummaryTile compact label="Sent" value={progress.sent} icon={<CheckCircle className="h-4 w-4" />} />
+                    <SummaryTile compact label="Failed" value={progress.failed} tone="danger" icon={<XCircle className="h-4 w-4" />} />
+                    <SummaryTile compact label="Remaining" value={progress.remaining} icon={<Users className="h-4 w-4" />} />
+                    <SummaryTile compact label="ETA" value={formatDuration(progress.estimatedTimeRemaining)} icon={<Clock className="h-4 w-4" />} />
+                  </div>
+                  {progress.currentContact && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                      Sending to {progress.currentContact.companyName || progress.currentContact.normalized}
+                    </div>
+                  )}
                 </>
               ) : (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Timer className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No active bulk messaging session</p>
-                    <p className="text-sm text-gray-400">Start a bulk send to see progress here</p>
-                  </CardContent>
-                </Card>
+                <p className="text-sm text-slate-500">No active sending session.</p>
               )}
-            </TabsContent>
-          </div>
-        </Tabs>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center pt-6 border-t">
-          <div className="flex gap-3">
-            {progress?.isRunning ? (
-              <>
-                {progress.isPaused ? (
-                  <Button onClick={handleResume} className="bg-green-600 hover:bg-green-700">
-                    <Play className="h-4 w-4 mr-2" />
-                    Resume
-                  </Button>
-                ) : (
-                  <Button onClick={handlePause} variant="outline">
-                    <Pause className="h-4 w-4 mr-2" />
-                    Pause
-                  </Button>
-                )}
-                <Button onClick={handleStop} variant="destructive">
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={handleStartBulkSend}
-                className="bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white shadow-lg"
-                disabled={!customMessage.trim() || validation.valid.length === 0}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Start Professional Bulk Send ({validation.valid.length} messages)
-              </Button>
-            )}
-          </div>
-
-          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+        <div className="flex flex-col-reverse gap-2 border-t bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
             Close
           </Button>
+
+          {progress?.isRunning ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {progress.isPaused ? (
+                <Button onClick={handleResume} className="w-full bg-emerald-600 hover:bg-emerald-700 sm:w-auto">
+                  <Play className="h-4 w-4 mr-2" />
+                  Resume
+                </Button>
+              ) : (
+                <Button onClick={handlePause} variant="outline" className="w-full sm:w-auto">
+                  <Pause className="h-4 w-4 mr-2" />
+                  Pause
+                </Button>
+              )}
+              <Button onClick={handleStop} variant="destructive" className="w-full sm:w-auto">
+                <Square className="h-4 w-4 mr-2" />
+                Stop
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleStartBulkSend}
+              className="w-full bg-emerald-600 text-white shadow-none hover:bg-emerald-700 sm:w-auto"
+              disabled={!customMessage.trim() || validation.valid.length === 0}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Start Sending ({validation.valid.length})
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function SummaryTile({
+  label,
+  value,
+  icon,
+  tone = "primary",
+  compact = false,
+}: {
+  label: string
+  value: number | string
+  icon: ReactNode
+  tone?: "primary" | "danger"
+  compact?: boolean
+}) {
+  const color = tone === "danger" ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-700 bg-emerald-50 border-emerald-100"
+
+  return (
+    <div className={`rounded-lg border ${color} ${compact ? "p-3" : "p-4"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium uppercase tracking-normal opacity-80">{label}</span>
+        {icon}
+      </div>
+      <div className={`${compact ? "mt-1 text-lg" : "mt-2 text-2xl"} font-semibold leading-none`}>{value}</div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-lg border bg-slate-50 p-3">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 font-semibold text-slate-800">{value}</div>
+    </div>
+  )
+}
+
+function NumberField({
+  id,
+  label,
+  value,
+  min,
+  max,
+  suffix,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: number
+  min: number
+  max: number
+  suffix?: string
+  onChange: (value: number) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-sm">
+        {label}
+      </Label>
+      <div className="flex items-center gap-2">
+        <Input
+          id={id}
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(event) => onChange(Number.parseInt(event.target.value) || min)}
+          className="h-10 text-sm"
+        />
+        {suffix && <span className="w-8 text-sm text-slate-500">{suffix}</span>}
+      </div>
+    </div>
+  )
+}
+
+function ToggleRow({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border bg-slate-50 p-3">
+      <Label htmlFor={id} className="text-sm">
+        {label}
+      </Label>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
   )
 }

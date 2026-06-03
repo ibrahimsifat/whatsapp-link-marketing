@@ -37,25 +37,25 @@ export function BulkActionsSection({
   if (selectedContacts.length === 0) return null
 
   return (
-    <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
+    <Card className="border border-slate-200 bg-white shadow-none">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
               <h3 className="font-semibold text-slate-800">Bulk Actions</h3>
               <p className="text-sm text-slate-600">{selectedContacts.length} contacts selected</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Dialog
               open={bulkStatusUpdate.isOpen}
               onOpenChange={(open) => onBulkStatusUpdateChange({ ...bulkStatusUpdate, isOpen: open })}
             >
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto">
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Update Status
                 </Button>
@@ -79,7 +79,7 @@ export function BulkActionsSection({
                           newStatus: e.target.value as Contact["status"],
                         })
                       }
-                      className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="pending">Pending</option>
                       <option value="sent">Sent</option>
@@ -97,7 +97,7 @@ export function BulkActionsSection({
                       className="text-sm"
                     />
                   </div>
-                  <div className="flex gap-2 pt-4">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-4">
                     <Button onClick={onBulkStatusUpdate} className="flex-1">
                       Update {selectedContacts.length} Contacts
                     </Button>
@@ -112,7 +112,7 @@ export function BulkActionsSection({
                 </div>
               </DialogContent>
             </Dialog>
-            <Button onClick={onClearSelection} variant="outline">
+            <Button onClick={onClearSelection} variant="outline" className="w-full sm:w-auto">
               Clear Selection
             </Button>
           </div>

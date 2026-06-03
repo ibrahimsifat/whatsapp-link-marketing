@@ -13,7 +13,6 @@ export { WhatsAppService } from "./whatsapp-service"
 export { PhoneService } from "./phone-service"
 
 // Feature services
-export { AdvancedSearchService } from "./advanced-search-service"
 export { ContactFilterService } from "./contact-filter-service"
 export { BatchSendService } from "./batch-send-service"
 
@@ -28,6 +27,5 @@ export type {
   FileValidationResult,
   ContactServiceResult,
   TemplateServiceResult,
-  SearchResult,
   ExportResult,
 } from "./types"

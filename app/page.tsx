@@ -1,15 +1,15 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import type { MessageTemplate } from "./types/contact"
-import type { SearchCriteria } from "./components/advanced-search"
 
 // Components
 import { BackToTop } from "./components/back-to-top"
 import { AppHeader } from "./components/app-header"
 import { StatisticsSection } from "./components/statistics-section"
 import { BulkMessageSender } from "./components/bulk-message-sender"
+import { ManualEntrySection } from "./components/manual-entry-section"
 
 // Section Components
 import { UploadDataSection } from "@/components/sections/upload-data-section"
@@ -30,15 +30,13 @@ import { useBulkOperations } from "@/hooks/use-bulk-operations"
 
 // Services
 import { ContactFilterService } from "./services/contact-filter-service"
-import { AdvancedSearchService } from "./services/advanced-search-service"
 import { TemplateService } from "./services/template-service"
 
 // Utils
 import { ToastUtils } from "./utils/toast-utils"
 
 export default function WhatsAppLinkGenerator() {
-  const { state, updateState, resetState, resetPagination } = useAppState()
-  const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({})
+  const { state, updateState, resetState } = useAppState()
 
   const { isUploadSectionExpanded, isMessageEditorExpanded, isContactsOverviewExpanded, toggleSection } =
     useSectionToggles()
@@ -96,11 +94,6 @@ export default function WhatsAppLinkGenerator() {
     }
   }, [database.contacts, state.contacts.length, updateState])
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    resetPagination()
-  }, [searchCriteria, resetPagination])
-
   // Template handling
   const applyTemplate = (template: MessageTemplate) => {
     updateState({ selectedTemplate: template })
@@ -150,17 +143,6 @@ export default function WhatsAppLinkGenerator() {
     } else {
       ToastUtils.error("Failed to delete contact")
     }
-  }
-
-  // Advanced search handling
-  const handleAdvancedSearch = (criteria: SearchCriteria) => {
-    setSearchCriteria(criteria)
-    resetPagination()
-  }
-
-  const handleClearSearch = () => {
-    setSearchCriteria({})
-    resetPagination()
   }
 
   // Batch operations
@@ -213,44 +195,36 @@ export default function WhatsAppLinkGenerator() {
 
   // Computed values
   const filteredContacts = useMemo(() => {
-    return AdvancedSearchService.searchContacts(state.contacts, searchCriteria)
-  }, [state.contacts, searchCriteria])
+    return state.contacts
+  }, [state.contacts])
 
   const paginatedContacts = useMemo(() => {
     return ContactFilterService.paginateContacts(filteredContacts, state.currentPage, state.itemsPerPage)
   }, [filteredContacts, state.currentPage, state.itemsPerPage])
 
-  const categories = AdvancedSearchService.getUniqueCategories(state.contacts)
-  const sources = AdvancedSearchService.getUniqueSources(state.contacts)
-  const customFields = AdvancedSearchService.getCustomFields(state.contacts)
   const availableCustomVariables = TemplateService.extractCustomVariables(state.contacts)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 space-y-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-3 sm:py-5 lg:py-6 space-y-3 sm:space-y-4">
         {/* Enhanced Header */}
         <AppHeader totalContacts={database.totalContacts} onLoadSavedContacts={loadSavedContacts} />
+
+        <ManualEntrySection
+          state={manualLink.state}
+          onStateUpdate={manualLink.updateState}
+          onGenerateLink={manualLink.handleGenerateManualLink}
+          onCopyLink={manualLink.handleCopyManualLink}
+        />
 
         <UploadDataSection
           isExpanded={isUploadSectionExpanded}
           onToggle={() => toggleSection("isUploadSectionExpanded")}
           contactsCount={state.contacts.length}
           fileState={fileHandling.state}
-          onFileStateUpdate={fileHandling.updateState}
           onDrag={fileHandling.handleDrag}
           onDrop={fileHandling.handleDrop}
           onFileChange={fileHandling.handleFileChange}
-          manualState={manualLink.state}
-          onManualStateUpdate={manualLink.updateState}
-          onGenerateLink={manualLink.handleGenerateManualLink}
-          onCopyLink={manualLink.handleCopyManualLink}
-          contacts={state.contacts}
-          onSearch={handleAdvancedSearch}
-          onClearSearch={handleClearSearch}
-          searchCriteria={searchCriteria}
-          categories={categories}
-          sources={sources}
-          customFields={customFields}
           templates={state.templates}
           selectedTemplate={state.selectedTemplate}
           onTemplateSelect={applyTemplate}
@@ -293,18 +267,18 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Enhanced Loading State */}
         {fileHandling.state.isLoading && (
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="flex items-center justify-center py-16">
-              <div className="text-center space-y-6">
+          <Card className="border border-slate-200 bg-white">
+            <CardContent className="flex items-center justify-center py-8 sm:py-10 px-4">
+              <div className="text-center space-y-3 sm:space-y-4">
                 <div className="relative">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-emerald-500 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-slate-200 border-t-emerald-500 mx-auto"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-emerald-500 rounded-full animate-pulse"></div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-slate-700 text-xl font-semibold">Processing file...</p>
-                  <p className="text-slate-500">Extracting business data and validating phone numbers</p>
+                  <p className="text-slate-700 text-base sm:text-lg font-semibold">Processing file...</p>
+                  <p className="text-sm sm:text-base text-slate-500">Extracting business data and validating phone numbers</p>
                 </div>
               </div>
             </CardContent>
@@ -313,7 +287,7 @@ export default function WhatsAppLinkGenerator() {
 
         {/* Bulk Message Sender */}
         {state.contacts.length > 0 && (
-          <div className="flex justify-center">
+          <div className="flex justify-center w-full">
             <BulkMessageSender
               contacts={state.contacts}
               selectedContacts={selectedContacts}
@@ -342,7 +316,6 @@ export default function WhatsAppLinkGenerator() {
             filteredContacts={filteredContacts}
             paginatedContacts={paginatedContacts}
             selectedContacts={selectedContacts}
-            searchCriteria={searchCriteria}
             batchState={contactOps.batchState}
             templates={state.templates}
             selectedTemplate={state.selectedTemplate}
@@ -351,7 +324,6 @@ export default function WhatsAppLinkGenerator() {
             onClearSelection={clearSelection}
             onBulkExport={() => contactOps.handleBulkExport(selectedContacts)}
             onBulkDelete={handleBulkDelete}
-            onClearSearch={handleClearSearch}
             onStartBatchSend={() => contactOps.startBatchSend(paginatedContacts.contacts)}
             onStopBatchSend={contactOps.stopBatchSend}
             onContactStatusUpdate={updateContactStatus}

@@ -112,39 +112,6 @@ export interface ColumnMapping {
 }
 
 // ============================================================================
-// SEARCH SERVICE TYPES
-// ============================================================================
-
-export interface SearchResult<T = Contact> {
-  items: T[]
-  totalCount: number
-  searchTime: number
-  appliedFilters: string[]
-}
-
-export interface SearchCriteria {
-  searchTerm?: string
-  category?: string
-  hasWebsite?: boolean
-  status?: string
-  source?: string
-  dateRange?: {
-    start: string
-    end: string
-  }
-  customFields?: Record<string, string>
-}
-
-export interface SavedSearch {
-  id: string
-  name: string
-  criteria: SearchCriteria
-  createdAt: string
-  lastUsed: string
-  useCount: number
-}
-
-// ============================================================================
 // EXPORT SERVICE TYPES
 // ============================================================================
 

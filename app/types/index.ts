@@ -152,39 +152,6 @@ export interface FileValidationResult {
   error?: string
 }
 
-// ============================================================================
-// SEARCH AND FILTER TYPES
-// ============================================================================
-
-/**
- * Advanced search criteria
- */
-export interface SearchCriteria {
-  /** Text search term */
-  searchTerm?: string
-
-  /** Filter by company category */
-  category?: string
-
-  /** Filter by website presence */
-  hasWebsite?: boolean
-
-  /** Filter by contact status */
-  status?: ContactStatus
-
-  /** Filter by source */
-  source?: string
-
-  /** Date range filter */
-  dateRange?: {
-    start: string
-    end: string
-  }
-
-  /** Custom field filters */
-  customFields?: Record<string, string>
-}
-
 /**
  * Pagination result structure
  */
@@ -259,10 +226,6 @@ export interface AppState {
   isLoading: boolean
   dragActive: boolean
   fileError: string
-  uploadPassword: string
-  passwordError: string
-  showPassword: boolean
-
   // Templates
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null

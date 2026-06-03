@@ -13,10 +13,6 @@ export interface AppState {
   isLoading: boolean
   dragActive: boolean
   fileError: string
-  uploadPassword: string
-  passwordError: string
-  showPassword: boolean
-
   // Templates
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null
@@ -55,10 +51,6 @@ const initialState: AppState = {
   isLoading: false,
   dragActive: false,
   fileError: "",
-  uploadPassword: "",
-  passwordError: "",
-  showPassword: false,
-
   // Templates
   templates: DEFAULT_TEMPLATES,
   selectedTemplate: null,

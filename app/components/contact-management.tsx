@@ -149,7 +149,7 @@ export function ContactManagement({
   const getStatusColor = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
       case "not_sent":
         return "bg-red-100 text-red-800 border-red-200"
       default:
@@ -169,54 +169,54 @@ export function ContactManagement({
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-6">
-        <CardTitle className="flex items-center gap-2 text-indigo-900 text-lg sm:text-xl">
+    <Card className="border border-slate-200 bg-white shadow-none">
+      <CardHeader className="bg-white border-b border-slate-200 p-4">
+        <CardTitle className="flex items-center gap-2 text-slate-900 text-lg sm:text-xl">
           <Database className="h-5 w-5 sm:h-6 sm:w-6" />
           Contact Management System
         </CardTitle>
-        <CardDescription className="text-indigo-700 text-xs sm:text-sm">
+        <CardDescription className="text-slate-600 text-xs sm:text-sm">
           Save, track, and manage your business contacts with send status tracking
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <CardContent className="p-4 sm:p-5 space-y-4">
         {/* Statistics Dashboard */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Database className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-bold text-blue-600">{database.totalContacts}</div>
-              <div className="text-xs text-blue-500">Total Saved</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+          <Card className="border-slate-200 bg-white shadow-none">
+            <CardContent className="p-3 text-center">
+              <Database className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
+              <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.totalContacts}</div>
+              <div className="text-xs text-slate-500">Total Saved</div>
             </CardContent>
           </Card>
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-bold text-green-600">{database.sentCount}</div>
-              <div className="text-xs text-green-500">Messages Sent</div>
+          <Card className="border-slate-200 bg-white shadow-none">
+            <CardContent className="p-3 text-center">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
+              <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.sentCount}</div>
+              <div className="text-xs text-slate-500">Messages Sent</div>
             </CardContent>
           </Card>
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-bold text-yellow-600">{database.pendingCount}</div>
-              <div className="text-xs text-yellow-500">Pending</div>
+          <Card className="border-slate-200 bg-white shadow-none">
+            <CardContent className="p-3 text-center">
+              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 mx-auto mb-2" />
+              <div className="text-lg sm:text-xl font-semibold text-amber-600">{database.pendingCount}</div>
+              <div className="text-xs text-slate-500">Pending</div>
             </CardContent>
           </Card>
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-3 sm:p-4 text-center">
+          <Card className="border-slate-200 bg-white shadow-none">
+            <CardContent className="p-3 text-center">
               <XCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-bold text-red-600">{database.notSentCount}</div>
-              <div className="text-xs text-red-500">Not Sent</div>
+              <div className="text-lg sm:text-xl font-semibold text-red-600">{database.notSentCount}</div>
+              <div className="text-xs text-slate-500">Not Sent</div>
             </CardContent>
           </Card>
-          <Card className="border-purple-200 bg-purple-50 col-span-2 sm:col-span-1">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-bold text-purple-600">
+          <Card className="border-slate-200 bg-white shadow-none col-span-2 sm:col-span-1">
+            <CardContent className="p-3 text-center">
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
+              <div className="text-lg sm:text-xl font-semibold text-emerald-600">
                 {database.totalContacts > 0 ? Math.round((database.sentCount / database.totalContacts) * 100) : 0}%
               </div>
-              <div className="text-xs text-purple-500">Send Rate</div>
+              <div className="text-xs text-slate-500">Send Rate</div>
             </CardContent>
           </Card>
         </div>
@@ -226,7 +226,7 @@ export function ContactManagement({
           <Button
             onClick={handleSaveCurrentContacts}
             disabled={isLoading || currentContacts.length === 0}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
           >
             <Save className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Save Current Contacts ({currentContacts.length})</span>
@@ -237,7 +237,7 @@ export function ContactManagement({
             onClick={handleMergeWithExisting}
             disabled={isLoading || currentContacts.length === 0}
             variant="outline"
-            className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent w-full sm:w-auto"
+            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-transparent w-full sm:w-auto"
           >
             <Upload className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Merge with Existing</span>
@@ -248,7 +248,7 @@ export function ContactManagement({
             onClick={onExportContacts}
             disabled={isLoading || database.totalContacts === 0}
             variant="outline"
-            className="border-purple-200 text-purple-700 hover:bg-purple-50 bg-transparent w-full sm:w-auto"
+            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-transparent w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Export Database</span>
@@ -266,7 +266,7 @@ export function ContactManagement({
                 Clear All
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="mx-4 max-w-md sm:max-w-lg">
+            <AlertDialogContent className="max-w-md sm:max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-base sm:text-lg">Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription className="text-xs sm:text-sm">
@@ -289,7 +289,7 @@ export function ContactManagement({
 
         {/* Current Session Info */}
         {currentContacts.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
+          <Card className="border-orange-200 bg-orange-50 shadow-none">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-start gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 mt-0.5 flex-shrink-0" />
@@ -305,10 +305,10 @@ export function ContactManagement({
 
         {/* Merge Results Dialog */}
         <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
-          <DialogContent className="mx-4 max-w-md sm:max-w-lg">
+          <DialogContent className="max-w-md sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
                 Merge Completed Successfully
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
@@ -319,15 +319,15 @@ export function ContactManagement({
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-green-600">{mergeStats.newContacts}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-emerald-600">{mergeStats.newContacts}</div>
                     <div className="text-xs sm:text-sm text-gray-600">New Contacts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{mergeStats.duplicates}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-emerald-600">{mergeStats.duplicates}</div>
                     <div className="text-xs sm:text-sm text-gray-600">Updated</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-purple-600">{mergeStats.total}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-emerald-600">{mergeStats.total}</div>
                     <div className="text-xs sm:text-sm text-gray-600">Total</div>
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export function ContactManagement({
 
         {/* Contact Status Update Dialog */}
         <Dialog open={!!selectedContact} onOpenChange={() => setSelectedContact(null)}>
-          <DialogContent className="mx-4 max-w-md sm:max-w-lg">
+          <DialogContent className="max-w-md sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -377,7 +377,7 @@ export function ContactManagement({
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => selectedContact && handleStatusUpdate(selectedContact, "sent")}
-                  className="bg-green-600 hover:bg-green-700 flex-1"
+                  className="bg-emerald-600 hover:bg-emerald-700 flex-1"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Mark as Sent
@@ -397,7 +397,7 @@ export function ContactManagement({
 
         {/* Database Info */}
         {database.totalContacts > 0 && (
-          <Card className="border-gray-200 bg-gray-50">
+          <Card className="border-gray-200 bg-gray-50 shadow-none">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

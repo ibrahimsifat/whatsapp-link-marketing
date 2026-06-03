@@ -42,37 +42,37 @@ export default function Documentation() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <Button
                 variant="ghost"
                 onClick={() => window.open("/", "_self")}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 hover:text-gray-900 w-full sm:w-auto justify-start"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to App
               </Button>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-600 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0">
+                  <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">WhatsApp Link Generator</h1>
-                  <p className="text-gray-600">Complete User Documentation</p>
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">WhatsApp Link Generator</h1>
+                  <p className="text-sm sm:text-base text-gray-600">Complete User Documentation</p>
                 </div>
               </div>
             </div>
-            <Badge className="bg-green-100 text-green-800 px-3 py-1">v1.1.0</Badge>
+            <Badge className="bg-green-100 text-green-800 px-3 py-1 w-fit">v1.1.0</Badge>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 sm:gap-8">
           {/* Table of Contents */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-8">
+            <Card className="lg:sticky lg:top-8">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Table of Contents</CardTitle>
               </CardHeader>
@@ -1500,16 +1500,16 @@ export default function Documentation() {
                     Now that you understand how to use the WhatsApp Link Generator effectively, it's time to put this
                     knowledge into practice and transform your business communication.
                   </p>
-                  <div className="flex justify-center gap-4">
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                     <Button
                       onClick={() => window.open("/", "_self")}
                       size="lg"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Start Using the App
                     </Button>
-                    <Button variant="outline" size="lg" onClick={() => scrollToSection("overview")}>
+                    <Button variant="outline" size="lg" onClick={() => scrollToSection("overview")} className="w-full sm:w-auto">
                       <BookOpen className="h-4 w-4 mr-2" />
                       Review Documentation
                     </Button>

@@ -16,9 +16,6 @@ export const APP_CONSTANTS = {
   /** Version number for database migrations */
   APP_VERSION: "1.0.0",
 
-  /** Default password for file uploads (change in production) */
-  UPLOAD_PASSWORD: "secure123",
-
   /** Maximum file size for uploads (10MB) */
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 

@@ -1,0 +1,56 @@
+Failed to load rate limit data: ReferenceError: localStorage is not defined
+    at EnhancedBulkMessageServiceClass.loadRateLimitData (app\services\enhanced-bulk-message-service.ts:96:19)
+    at new EnhancedBulkMessageServiceClass (app\services\enhanced-bulk-message-service.ts:91:9)
+    at eval (app\services\enhanced-bulk-message-service.ts:634:42)
+    at (ssr)/./app/services/enhanced-bulk-message-service.ts (D:\project\whatsapp-link-marketing\.next\server\app\page.js:448:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/components/bulk-message-sender.tsx:34:98)
+    at (ssr)/./app/components/bulk-message-sender.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:206:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/components/statistics-section.tsx:17:78)
+    at (ssr)/./app/components/statistics-section.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:316:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/page.tsx:12:88)
+    at (ssr)/./app/page.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:415:1)
+    at Object.__webpack_require__ [as require] (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at JSON.parse (<anonymous>)
+  94 |   private loadRateLimitData() {
+  95 |     try {
+> 96 |       const data = localStorage.getItem("whatsapp_rate_limit_data")
+     |                   ^
+  97 |       if (data) {
+  98 |         const parsed = JSON.parse(data)
+  99 |         const now = Date.now()
+ ⨯ ./app/components/bulk-message-sender.tsx
+Error: Failed to read source code from D:\project\whatsapp-link-marketing\app\components\bulk-message-sender.tsx
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./app/components/bulk-message-sender.tsx
+./app/page.tsx
+Failed to load rate limit data: ReferenceError: localStorage is not defined
+    at EnhancedBulkMessageServiceClass.loadRateLimitData (app\services\enhanced-bulk-message-service.ts:96:19)
+    at new EnhancedBulkMessageServiceClass (app\services\enhanced-bulk-message-service.ts:91:9)
+    at eval (app\services\enhanced-bulk-message-service.ts:634:42)
+    at (ssr)/./app/services/enhanced-bulk-message-service.ts (D:\project\whatsapp-link-marketing\.next\server\app\page.js:448:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/components/bulk-message-sender.tsx:29:98)
+    at (ssr)/./app/components/bulk-message-sender.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:206:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/components/statistics-section.tsx:17:78)
+    at (ssr)/./app/components/statistics-section.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:316:1)
+    at __webpack_require__ (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at eval (webpack-internal:///(ssr)/./app/page.tsx:12:88)
+    at (ssr)/./app/page.tsx (D:\project\whatsapp-link-marketing\.next\server\app\page.js:415:1)
+    at Object.__webpack_require__ [as require] (D:\project\whatsapp-link-marketing\.next\server\webpack-runtime.js:33:42)
+    at JSON.parse (<anonymous>)
+  94 |   private loadRateLimitData() {
+  95 |     try {
+> 96 |       const data = localStorage.getItem("whatsapp_rate_limit_data")
+     |                   ^
+  97 |       if (data) {
+  98 |         const parsed = JSON.parse(data)
+  99 |         const now = Date.now()
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\project\whatsapp-link-marketing\.next\cache\webpack\client-development\0.pack.gz_' -> 'D:\project\whatsapp-link-marketing\.next\cache\webpack\client-development\0.pack.gz'
