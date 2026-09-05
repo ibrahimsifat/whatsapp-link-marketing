@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { BarChart3, Download, Trash2, Play, StopCircle } from "lucide-react"
+import { BarChart3, Download, Trash2 } from "lucide-react"
 import { BulkMessageSender } from "./bulk-message-sender"
 import type { Contact, MessageTemplate } from "../types/contact"
 
@@ -23,7 +23,6 @@ interface StatisticsSectionProps {
   filteredContacts: Contact[]
   paginatedContacts: { contacts: Contact[]; currentPage: number; totalPages: number }
   selectedContacts: Contact[]
-  batchState: { isBatchSending: boolean; currentBatchIndex: number }
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null
   customMessage: string
@@ -31,9 +30,7 @@ interface StatisticsSectionProps {
   onClearSelection: () => void
   onBulkExport: () => void
   onBulkDelete: () => void
-  onStartBatchSend: () => void
-  onStopBatchSend: () => void
-  onContactStatusUpdate: (contactId: string, status: Contact["status"]) => void
+  onContactStatusUpdate: (contactId: string, status: Contact["status"]) => Promise<{ success: boolean; message?: string }>
   onShowToast: (message: string, type?: "success" | "error" | "warning" | "info") => void
 }
 
@@ -41,7 +38,6 @@ export function StatisticsSection({
   filteredContacts,
   paginatedContacts,
   selectedContacts,
-  batchState,
   templates,
   selectedTemplate,
   customMessage,
@@ -49,8 +45,6 @@ export function StatisticsSection({
   onClearSelection,
   onBulkExport,
   onBulkDelete,
-  onStartBatchSend,
-  onStopBatchSend,
   onContactStatusUpdate,
   onShowToast,
 }: StatisticsSectionProps) {
@@ -176,7 +170,7 @@ export function StatisticsSection({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-slate-600 gap-2 sm:gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs sm:text-sm text-slate-600">
           <span>
             {"Showing "}
             {paginatedContacts.contacts.length}
@@ -185,57 +179,6 @@ export function StatisticsSection({
             {" contacts"}
           </span>
         </div>
-
-        {/* Enhanced Batch Send Button */}
-        {paginatedContacts.contacts.length > 0 && (
-          <div className="text-center">
-            {batchState.isBatchSending ? (
-              <Button
-                onClick={onStopBatchSend}
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white shadow-none transition-colors h-11 px-4 sm:px-6 text-sm sm:text-base"
-                size="lg"
-              >
-                <StopCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                Stop Sending ({batchState.currentBatchIndex}/{paginatedContacts.contacts.length})
-              </Button>
-            ) : (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    disabled={paginatedContacts.contacts.length === 0}
-                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-none transition-colors h-11 px-4 sm:px-6 text-sm sm:text-base"
-                    size="lg"
-                  >
-                    <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                    Send Current Page ({paginatedContacts.contacts.length})
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-white">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <Play className="h-5 w-5 text-emerald-600" />
-                      Confirm Batch Send
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will open {paginatedContacts.contacts.length} WhatsApp chats from the current page in new
-                      tabs, one by one, with a small delay. **Please ensure your browser allows pop-ups for this site,
-                      otherwise, the chats will not open.**
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onStartBatchSend}
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      Start Sending
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   )

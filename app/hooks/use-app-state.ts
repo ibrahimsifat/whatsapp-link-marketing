@@ -52,7 +52,7 @@ const initialState: AppState = {
   dragActive: false,
   fileError: "",
   // Templates
-  templates: DEFAULT_TEMPLATES,
+  templates: DEFAULT_TEMPLATES.map((t) => ({ ...t, variables: [...t.variables] })),
   selectedTemplate: null,
   customMessage: "",
 

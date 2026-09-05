@@ -112,11 +112,11 @@ export function ContactCard({
   const getStatusColor = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200"
+        return "bg-emerald-50 text-emerald-800 border-emerald-200"
       case "not_sent":
-        return "bg-red-50 text-red-700 border-red-200"
+        return "bg-red-50 text-red-600 border-red-200"
       default:
-        return "bg-amber-50 text-amber-700 border-amber-200"
+        return "bg-amber-50 text-amber-800 border-amber-200"
     }
   }
 
@@ -220,7 +220,7 @@ export function ContactCard({
             <Button
               onClick={handleOpenChat}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs h-8 shadow-none flex-1 sm:flex-none justify-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs h-9 shadow-none flex-1 sm:flex-none justify-center"
             >
               <MessageCircle className="h-3.5 w-3.5 mr-1" />
               Chat
@@ -230,7 +230,7 @@ export function ContactCard({
               onClick={handleCopyLink}
               variant="outline"
               size="sm"
-              className="px-2.5 py-1.5 text-xs h-8 bg-white hover:bg-slate-50 border-slate-200"
+              className="px-2.5 py-1.5 text-xs h-9 bg-white hover:bg-slate-50 border-slate-200"
             >
               <Copy className="h-3.5 w-3.5" />
             </Button>
@@ -240,7 +240,7 @@ export function ContactCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="px-2.5 py-1.5 text-xs h-8 bg-white hover:bg-slate-50 border-slate-200 flex-1 sm:flex-none justify-center"
+                  className="px-2.5 py-1.5 text-xs h-9 bg-white hover:bg-slate-50 border-slate-200 flex-1 sm:flex-none justify-center"
                 >
                   <Edit className="h-3.5 w-3.5" />
                 </Button>
@@ -313,7 +313,7 @@ export function ContactCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 text-xs h-8 bg-white border-slate-200 flex-1 sm:flex-none justify-center"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 text-xs h-9 bg-white border-slate-200 flex-1 sm:flex-none justify-center"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

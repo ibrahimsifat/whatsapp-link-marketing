@@ -91,13 +91,13 @@ export function Pagination({
           size="sm"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="hidden sm:flex h-8 sm:h-9"
+          className="hidden sm:flex h-9"
         >
           <ChevronsLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </Button>
 
         {/* Previous page */}
-        <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="h-8 sm:h-9">
+        <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="h-9">
           <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="hidden sm:inline ml-1">Previous</span>
         </Button>
@@ -113,7 +113,7 @@ export function Pagination({
                   variant={currentPage === page ? "default" : "outline"}
                   size="sm"
                   onClick={() => onPageChange(page as number)}
-                  className="min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 text-xs sm:text-sm"
+                  className="min-w-[2.25rem] sm:min-w-[2.5rem] h-9 text-xs sm:text-sm"
                 >
                   {page}
                 </Button>
@@ -128,7 +128,7 @@ export function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="h-8 sm:h-9"
+          className="h-9"
         >
           <span className="hidden sm:inline mr-1">Next</span>
           <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -140,7 +140,7 @@ export function Pagination({
           size="sm"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="hidden sm:flex h-8 sm:h-9"
+          className="hidden sm:flex h-9"
         >
           <ChevronsRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </Button>

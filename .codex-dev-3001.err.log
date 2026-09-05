@@ -54,3 +54,30 @@ Failed to load rate limit data: ReferenceError: localStorage is not defined
   98 |         const parsed = JSON.parse(data)
   99 |         const now = Date.now()
 <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\project\whatsapp-link-marketing\.next\cache\webpack\client-development\0.pack.gz_' -> 'D:\project\whatsapp-link-marketing\.next\cache\webpack\client-development\0.pack.gz'
+ ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in 'D:\project\whatsapp-link-marketing'
+ ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in 'D:\project\whatsapp-link-marketing'
+ ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in 'D:\project\whatsapp-link-marketing'
+ ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in 'D:\project\whatsapp-link-marketing'
+ ⨯ Module not found: Error: Can't resolve 'next-flight-client-entry-loader' in 'D:\project\whatsapp-link-marketing'
+ ⚠ Found a change in next.config.mjs. Restarting the server to apply the changes...
+node:internal/modules/cjs/loader:1503
+  throw err;
+  ^
+
+Error: Cannot find module 'D:\project\whatsapp-link-marketing\node_modules\.pnpm\next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0\node_modules\next\dist\server\lib\start-server.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1500:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1116:12)
+    at Module._load (node:internal/modules/cjs/loader:1285:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.16.0
+'\next" ^"dev"' is not recognized as an internal or external command,
+operable program or batch file.
+⚠ Minimum recommended TypeScript version is v5.1.0, older versions can potentially be incompatible with Next.js. Detected: 5.0.2

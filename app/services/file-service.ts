@@ -76,31 +76,51 @@ export class FileService {
   }
 
   /**
-   * Processes CSV file
+   * Processes CSV file. Handles quoted fields, escaped ("") quotes within
+   * quoted fields, and quoted fields that contain embedded newlines.
    */
   private static async processCSVFile(file: File): Promise<string[][]> {
     const text = await file.text()
-    const lines = text.split("\n").filter((line) => line.trim())
+    const rows: string[][] = []
+    let row: string[] = []
+    let current = ""
+    let inQuotes = false
 
-    return lines.map((line) => {
-      const result: string[] = []
-      let current = ""
-      let inQuotes = false
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i]
+      const next = text[i + 1]
 
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i]
-        if (char === '"') {
-          inQuotes = !inQuotes
-        } else if (char === "," && !inQuotes) {
-          result.push(current.trim())
-          current = ""
+      if (inQuotes) {
+        if (char === '"' && next === '"') {
+          current += '"'
+          i++
+        } else if (char === '"') {
+          inQuotes = false
         } else {
           current += char
         }
+      } else if (char === '"') {
+        inQuotes = true
+      } else if (char === ",") {
+        row.push(current.trim())
+        current = ""
+      } else if (char === "\n" || char === "\r") {
+        if (char === "\r" && next === "\n") i++
+        row.push(current.trim())
+        current = ""
+        if (row.some((cell) => cell !== "")) rows.push(row)
+        row = []
+      } else {
+        current += char
       }
-      result.push(current.trim())
-      return result
-    })
+    }
+
+    if (current !== "" || row.length > 0) {
+      row.push(current.trim())
+      if (row.some((cell) => cell !== "")) rows.push(row)
+    }
+
+    return rows
   }
 
   /**
@@ -139,7 +159,7 @@ export class FileService {
     // Process data rows
     data.slice(1).forEach((row, rowIndex) => {
       try {
-        const contact = this.extractContactFromRow(row, columnMapping, fileName, customMessage)
+        const { contact, skipReason } = this.extractContactFromRow(row, columnMapping, fileName, customMessage)
 
         if (contact) {
           if (seenNumbers.has(contact.normalized)) {
@@ -149,6 +169,10 @@ export class FileService {
             seenNumbers.add(contact.normalized)
             contacts.push(contact)
           }
+        } else if (skipReason === "no-phone") {
+          warnings.push(`Row ${rowIndex + 2} skipped: no phone number found in this row`)
+        } else if (skipReason === "invalid-phone") {
+          warnings.push(`Row ${rowIndex + 2} skipped: phone number could not be recognized as a valid number`)
         }
       } catch (error) {
         warnings.push(
@@ -213,12 +237,17 @@ export class FileService {
     columnMapping: ReturnType<typeof FileService.mapColumns>,
     fileName: string,
     customMessage: string,
-  ): Contact | null {
+  ): { contact: Contact | null; skipReason?: "empty" | "no-phone" | "invalid-phone" } {
     let phoneNumber = ""
     let companyName = ""
     let companyCategory = ""
     let website = ""
     const dynamicData: Record<string, string | number | boolean | null | undefined> = {}
+
+    const isBlankRow = row.every((cell) => String(cell ?? "").trim() === "")
+    if (isBlankRow) {
+      return { contact: null, skipReason: "empty" }
+    }
 
     // Extract phone number
     if (columnMapping.phoneColumns.length > 0) {
@@ -230,12 +259,12 @@ export class FileService {
     }
 
     if (!phoneNumber) {
-      return null
+      return { contact: null, skipReason: "no-phone" }
     }
 
     const normalized = PhoneService.normalizePhoneNumber(phoneNumber)
     if (!normalized) {
-      return null
+      return { contact: null, skipReason: "invalid-phone" }
     }
 
     // Extract company data
@@ -263,18 +292,20 @@ export class FileService {
     }
 
     return {
-      id: this.generateContactId(normalized),
-      original: phoneNumber,
-      normalized,
-      whatsappLink: WhatsAppService.generateWhatsAppLink(normalized, customMessage),
-      companyName: companyName || undefined,
-      companyCategory: companyCategory || undefined,
-      website: website || undefined,
-      hasWebsite,
-      status: "pending",
-      lastUpdated: new Date().toISOString(),
-      source: fileName,
-      dynamicData: Object.keys(dynamicData).length > 0 ? dynamicData : undefined,
+      contact: {
+        id: this.generateContactId(normalized),
+        original: phoneNumber,
+        normalized,
+        whatsappLink: WhatsAppService.generateWhatsAppLink(normalized, customMessage),
+        companyName: companyName || undefined,
+        companyCategory: companyCategory || undefined,
+        website: website || undefined,
+        hasWebsite,
+        status: "pending",
+        lastUpdated: new Date().toISOString(),
+        source: fileName,
+        dynamicData: Object.keys(dynamicData).length > 0 ? dynamicData : undefined,
+      },
     }
   }
 
@@ -302,5 +333,54 @@ export class FileService {
    */
   private static generateContactId(phone: string): string {
     return `contact_${phone.replace(/[^\d]/g, "")}_${Date.now()}`
+  }
+
+  /**
+   * Escapes a single CSV field, quoting it when it contains a comma, quote, or newline
+   */
+  private static escapeCsvField(value: string): string {
+    if (/[",\n\r]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`
+    }
+    return value
+  }
+
+  /**
+   * Serializes contacts to a downloadable file. Currently only CSV is supported.
+   */
+  static exportContacts(contacts: Contact[], format: "csv" = "csv"): string {
+    const headers = ["Company Name", "Phone Number", "Category", "Website", "Status", "Notes", "Source", "Last Updated"]
+    const rows = contacts.map((contact) =>
+      [
+        contact.companyName || "",
+        contact.original,
+        contact.companyCategory || "",
+        contact.website || "",
+        contact.status,
+        contact.notes || "",
+        contact.source,
+        contact.lastUpdated,
+      ]
+        .map((field) => this.escapeCsvField(String(field)))
+        .join(","),
+    )
+
+    return [headers.join(","), ...rows].join("\r\n")
+  }
+
+  /**
+   * Triggers a browser download of the given text content
+   */
+  static downloadFile(content: string, filename: string, mimeType: string): void {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 }

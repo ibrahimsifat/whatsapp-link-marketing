@@ -33,6 +33,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import type { Contact, ContactDatabase } from "../types/contact"
+import { ToastUtils } from "../utils/toast-utils"
 
 interface ContactManagementProps {
   database: ContactDatabase
@@ -70,21 +71,21 @@ export function ContactManagement({
 
   const handleSaveCurrentContacts = async () => {
     if (currentContacts.length === 0) {
-      alert("No contacts to save")
+      ToastUtils.error("No contacts to save")
       return
     }
 
     const result = await onSaveContacts(currentContacts)
     if (result.success) {
-      alert(result.message)
+      ToastUtils.success(result.message)
     } else {
-      alert(`Error: ${result.message}`)
+      ToastUtils.error(result.message || "Failed to save contacts")
     }
   }
 
   const handleMergeWithExisting = async () => {
     if (currentContacts.length === 0) {
-      alert("No contacts to merge")
+      ToastUtils.error("No contacts to merge")
       return
     }
 
@@ -97,7 +98,7 @@ export function ContactManagement({
       // Update current contacts to reflect the merged state
       onUpdateCurrentContacts([]) // Clear current session contacts after merging
     } else {
-      alert(`Error: ${result.message}`)
+      ToastUtils.error(result.message || "Failed to merge contacts")
     }
   }
 
@@ -114,7 +115,7 @@ export function ContactManagement({
       setSelectedContact(null)
       setNotes("")
     } else {
-      alert(`Error: ${result.message}`)
+      ToastUtils.error(result.message || "Failed to update status")
     }
   }
 
@@ -124,9 +125,9 @@ export function ContactManagement({
       // Remove from current contacts if it exists there
       const updatedCurrentContacts = currentContacts.filter((c) => c.id !== contactId)
       onUpdateCurrentContacts(updatedCurrentContacts)
-      alert(result.message)
+      ToastUtils.success(result.message)
     } else {
-      alert(`Error: ${result.message}`)
+      ToastUtils.error(result.message || "Failed to delete contact")
     }
   }
 
@@ -136,24 +137,24 @@ export function ContactManagement({
       if (result.success) {
         // Clear current contacts as well
         onUpdateCurrentContacts([])
-        alert(result.message)
+        ToastUtils.success(result.message)
       } else {
-        alert(`Error: ${result.message}`)
+        ToastUtils.error(result.message || "Failed to clear all contacts")
       }
     } catch (error) {
       console.error("Error clearing all contacts:", error)
-      alert("Failed to clear all contacts")
+      ToastUtils.error("Failed to clear all contacts")
     }
   }
 
   const getStatusColor = (status: Contact["status"]) => {
     switch (status) {
       case "sent":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200"
+        return "bg-emerald-50 text-emerald-800 border-emerald-200"
       case "not_sent":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-50 text-red-600 border-red-200"
       default:
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-amber-50 text-amber-800 border-amber-200"
     }
   }
 
@@ -182,43 +183,33 @@ export function ContactManagement({
       <CardContent className="p-4 sm:p-5 space-y-4">
         {/* Statistics Dashboard */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-          <Card className="border-slate-200 bg-white shadow-none">
-            <CardContent className="p-3 text-center">
-              <Database className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.totalContacts}</div>
-              <div className="text-xs text-slate-500">Total Saved</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 bg-white shadow-none">
-            <CardContent className="p-3 text-center">
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.sentCount}</div>
-              <div className="text-xs text-slate-500">Messages Sent</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 bg-white shadow-none">
-            <CardContent className="p-3 text-center">
-              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-semibold text-amber-600">{database.pendingCount}</div>
-              <div className="text-xs text-slate-500">Pending</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 bg-white shadow-none">
-            <CardContent className="p-3 text-center">
-              <XCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-semibold text-red-600">{database.notSentCount}</div>
-              <div className="text-xs text-slate-500">Not Sent</div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200 bg-white shadow-none col-span-2 sm:col-span-1">
-            <CardContent className="p-3 text-center">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 mx-auto mb-2" />
-              <div className="text-lg sm:text-xl font-semibold text-emerald-600">
-                {database.totalContacts > 0 ? Math.round((database.sentCount / database.totalContacts) * 100) : 0}%
-              </div>
-              <div className="text-xs text-slate-500">Send Rate</div>
-            </CardContent>
-          </Card>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+            <Database className="h-5 w-5 text-emerald-600 mx-auto mb-2" />
+            <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.totalContacts}</div>
+            <div className="text-xs text-slate-500">Total Saved</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+            <CheckCircle className="h-5 w-5 text-emerald-600 mx-auto mb-2" />
+            <div className="text-lg sm:text-xl font-semibold text-emerald-600">{database.sentCount}</div>
+            <div className="text-xs text-slate-500">Messages Sent</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+            <Clock className="h-5 w-5 text-amber-600 mx-auto mb-2" />
+            <div className="text-lg sm:text-xl font-semibold text-amber-600">{database.pendingCount}</div>
+            <div className="text-xs text-slate-500">Pending</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+            <XCircle className="h-5 w-5 text-red-600 mx-auto mb-2" />
+            <div className="text-lg sm:text-xl font-semibold text-red-600">{database.notSentCount}</div>
+            <div className="text-xs text-slate-500">Not Sent</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center col-span-2 sm:col-span-1">
+            <TrendingUp className="h-5 w-5 text-emerald-600 mx-auto mb-2" />
+            <div className="text-lg sm:text-xl font-semibold text-emerald-600">
+              {database.totalContacts > 0 ? Math.round((database.sentCount / database.totalContacts) * 100) : 0}%
+            </div>
+            <div className="text-xs text-slate-500">Send Rate</div>
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -74,12 +74,7 @@ export default function WhatsAppLinkGenerator() {
   const manualLink = useManualLink(customMessage)
 
   // Contact operations hook
-  const contactOps = useContactOperations(
-    state.contacts,
-    customMessage,
-    (contacts) => updateState({ contacts }),
-    updateContactStatus,
-  )
+  const contactOps = useContactOperations(state.contacts, customMessage, (contacts) => updateState({ contacts }))
 
   useEffect(() => {
     if (customMessage !== state.customMessage) {
@@ -113,9 +108,6 @@ export default function WhatsAppLinkGenerator() {
       if (result.success) {
         resetState()
         setSelectedContacts([])
-        if (contactOps.batchSendTimeoutRef.current) {
-          clearTimeout(contactOps.batchSendTimeoutRef.current)
-        }
         ToastUtils.success("All contacts cleared successfully")
       } else {
         ToastUtils.error(result.message || "Failed to clear contacts")
@@ -316,7 +308,6 @@ export default function WhatsAppLinkGenerator() {
             filteredContacts={filteredContacts}
             paginatedContacts={paginatedContacts}
             selectedContacts={selectedContacts}
-            batchState={contactOps.batchState}
             templates={state.templates}
             selectedTemplate={state.selectedTemplate}
             customMessage={customMessage}
@@ -324,8 +315,6 @@ export default function WhatsAppLinkGenerator() {
             onClearSelection={clearSelection}
             onBulkExport={() => contactOps.handleBulkExport(selectedContacts)}
             onBulkDelete={handleBulkDelete}
-            onStartBatchSend={() => contactOps.startBatchSend(paginatedContacts.contacts)}
-            onStopBatchSend={contactOps.stopBatchSend}
             onContactStatusUpdate={updateContactStatus}
             onShowToast={ToastUtils.success}
           />

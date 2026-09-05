@@ -51,7 +51,7 @@ export class ToastUtils {
   }
 
   /**
-   * Shows a promise toast
+   * Shows a promise toast. Returns the settled value once the promise resolves.
    */
   static promise<T>(
     promise: Promise<T>,
@@ -61,6 +61,7 @@ export class ToastUtils {
       error: string | ((error: any) => string)
     },
   ): Promise<T> {
-    return toast.promise(promise, messages)
+    toast.promise(promise, messages)
+    return promise
   }
 }

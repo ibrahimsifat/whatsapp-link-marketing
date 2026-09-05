@@ -92,6 +92,8 @@ class EnhancedBulkMessageServiceClass {
   }
 
   private loadRateLimitData() {
+    if (typeof window === "undefined") return
+
     try {
       const data = localStorage.getItem("whatsapp_rate_limit_data")
       if (data) {
@@ -123,6 +125,8 @@ class EnhancedBulkMessageServiceClass {
   }
 
   private saveRateLimitData() {
+    if (typeof window === "undefined") return
+
     try {
       const data = {
         messagesThisHour: this.messagesThisHour,

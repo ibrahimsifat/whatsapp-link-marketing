@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { ImageLinkButton, ImageLinkPanel } from "@/components/ui/image-link-inserter"
 import {
   Bold,
   Italic,
@@ -156,6 +157,7 @@ export default function WhatsAppEditor({
 }: WhatsAppEditorProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showImageInserter, setShowImageInserter] = useState(false)
   const [selectedEmojiCategory, setSelectedEmojiCategory] = useState("greetings")
   const [showTemplates, setShowTemplates] = useState(false)
   const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("introduction")
@@ -315,7 +317,8 @@ export default function WhatsAppEditor({
   }, [templateName, value, templateCategory, onSave])
 
   const renderPreview = useCallback(() => {
-    let preview = value
+    // Escape HTML entities first so pasted/typed text can never be interpreted as markup.
+    let preview = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
     // Apply WhatsApp formatting
     preview = preview
@@ -323,6 +326,12 @@ export default function WhatsAppEditor({
       .replace(/_([^_]+)_/g, "<em>$1</em>")
       .replace(/~([^~]+)~/g, "<del>$1</del>")
       .replace(/```([^`]+)```/g, '<code class="bg-gray-100 px-2 py-1 rounded font-mono text-sm">$1</code>')
+
+    // Render attached image links as thumbnails
+    preview = preview.replace(
+      /(https?:\/\/[^\s<]+\.(?:png|jpe?g|gif|webp|bmp|svg)(?:\?[^\s<]*)?)/gi,
+      '<img src="$1" alt="Attached image" class="my-1 max-h-40 rounded-lg border border-emerald-200 object-contain" />',
+    )
 
     // Highlight variables
     variables.forEach((variable) => {
@@ -386,7 +395,7 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => formatText("bold")}
               title="Bold (*text*)"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Bold className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -395,7 +404,7 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => formatText("italic")}
               title="Italic (_text_)"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Italic className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -404,7 +413,7 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => formatText("strikethrough")}
               title="Strikethrough (~text~)"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Strikethrough className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -413,7 +422,7 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => formatText("code")}
               title="Code (```text```)"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -428,7 +437,7 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Insert Emoji"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Smile className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -437,20 +446,21 @@ export default function WhatsAppEditor({
               size="sm"
               onClick={() => setShowTemplates(!showTemplates)}
               title="Message Templates"
-              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
+            <ImageLinkButton isOpen={showImageInserter} onClick={() => setShowImageInserter(!showImageInserter)} />
           </div>
 
           <Separator orientation="vertical" className="h-5 sm:h-6 hidden sm:block" />
 
           {/* Action Tools */}
           <div className="flex items-center gap-0.5 sm:gap-1">
-            <Button variant="ghost" size="sm" onClick={copyToClipboard} title="Copy Message" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+            <Button variant="ghost" size="sm" onClick={copyToClipboard} title="Copy Message" className="h-9 w-9 p-0">
               <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={clearEditor} title="Clear Editor" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+            <Button variant="ghost" size="sm" onClick={clearEditor} title="Clear Editor" className="h-9 w-9 p-0">
               <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
             {onSave && (
@@ -459,7 +469,7 @@ export default function WhatsAppEditor({
                 size="sm"
                 onClick={() => setShowSaveDialog(true)}
                 title="Save as Template"
-                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                className="h-9 w-9 p-0"
               >
                 <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
@@ -506,6 +516,11 @@ export default function WhatsAppEditor({
           </div>
         )}
 
+        {/* Image Link Inserter */}
+        {showImageInserter && (
+          <ImageLinkPanel onInsert={(url) => insertText(`\n${url}\n`)} onClose={() => setShowImageInserter(false)} />
+        )}
+
         {/* Professional Emoji Picker */}
         {showEmojiPicker && (
           <Card className="border border-emerald-200 bg-emerald-50 mx-0 sm:mx-auto shadow-none">
@@ -515,7 +530,7 @@ export default function WhatsAppEditor({
                   <Smile className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Professional Emojis
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setShowEmojiPicker(false)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => setShowEmojiPicker(false)} className="h-9 w-9 p-0">
                   <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
@@ -533,14 +548,14 @@ export default function WhatsAppEditor({
 
                 {Object.entries(EMOJI_CATEGORIES).map(([key, category]) => (
                   <TabsContent key={key} value={key} className="mt-3 sm:mt-4">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5 sm:gap-2">
                       {category.emojis.map((emoji, index) => (
                         <Button
                           key={index}
                           variant="ghost"
                           size="sm"
                           onClick={() => insertEmoji(emoji)}
-                          className="h-8 w-8 sm:h-10 sm:w-10 p-0 text-base sm:text-lg hover:bg-emerald-100 hover:scale-110 transition-all"
+                          className="h-9 w-9 sm:h-10 sm:w-10 p-0 text-base sm:text-lg hover:bg-emerald-100"
                           title={`Insert ${emoji}`}
                         >
                           {emoji}
@@ -782,34 +797,6 @@ export default function WhatsAppEditor({
             </CardContent>
           </Card>
         )}
-
-        {/* Professional Tips */}
-        <Card className="bg-slate-50 border-slate-200 shadow-none">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">Professional Tips</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-slate-700">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
-                <span>Use *bold* for important points</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
-                <span>Keep messages under 160 words</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
-                <span>Include clear call-to-action</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
-                <span>Use emojis sparingly but effectively</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </CardContent>
     </Card>
   )

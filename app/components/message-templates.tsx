@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageLinkInserter } from "@/components/ui/image-link-inserter"
 import { MessageSquare, Plus, Edit, Trash2, Globe, GlobeIcon as GlobeX, Users, Tag, Save, X, Eye } from "lucide-react"
 
 interface MessageTemplate {
@@ -139,7 +140,7 @@ export function MessageTemplates({
               Pre-built templates with smart variables for different business scenarios
             </CardDescription>
           </div>
-          <Button onClick={() => setIsCreating(true)} className="bg-slate-900 hover:bg-slate-800 w-full sm:w-auto h-10 sm:h-auto text-sm">
+          <Button onClick={() => setIsCreating(true)} className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto h-10 sm:h-auto text-sm">
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
             New Template
           </Button>
@@ -225,6 +226,9 @@ export function MessageTemplates({
                 <div className="text-[10px] sm:text-xs text-gray-500 break-words">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
+                <ImageLinkInserter
+                  onInsert={(url) => setNewTemplate({ ...newTemplate, content: `${newTemplate.content || ""}\n${url}\n` })}
+                />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
@@ -284,6 +288,9 @@ export function MessageTemplates({
                 <div className="text-[10px] sm:text-xs text-gray-500 break-words">
                   Available variables: {allAvailableVariables.map((v) => `\`${v}\``).join(", ")}
                 </div>
+                <ImageLinkInserter
+                  onInsert={(url) => setEditingTemplate({ ...editingTemplate, content: `${editingTemplate.content}\n${url}\n` })}
+                />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
@@ -306,7 +313,7 @@ export function MessageTemplates({
             <CardHeader className="bg-slate-50 p-3 sm:p-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm sm:text-lg text-slate-800">Template Preview</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(null)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(null)} className="h-9 w-9 p-0">
                   <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
@@ -366,9 +373,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setPreviewTemplate(template)
                           }}
-                          className="h-5 w-5 sm:h-8 sm:w-8 p-0"
+                          className="h-9 w-9 p-0"
                         >
-                          <Eye className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+                          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -377,9 +384,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             setEditingTemplate(template)
                           }}
-                          className="h-5 w-5 sm:h-8 sm:w-8 p-0"
+                          className="h-9 w-9 p-0"
                         >
-                          <Edit className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -388,9 +395,9 @@ export function MessageTemplates({
                             e.stopPropagation()
                             onTemplateDelete(template.id)
                           }}
-                          className="h-5 w-5 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
+                          className="h-9 w-9 p-0 text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </div>
@@ -428,8 +435,8 @@ export function MessageTemplates({
                     {/* Action Button */}
                     <Button
                       onClick={() => onTemplateSelect(template)}
-                      className={`w-full text-[10px] sm:text-sm h-8 sm:h-9 ${
-                        isSelected ? "bg-slate-900 hover:bg-slate-800" : "bg-slate-700 hover:bg-slate-800"
+                      className={`w-full text-[10px] sm:text-sm h-9 ${
+                        isSelected ? "bg-emerald-700 hover:bg-emerald-800" : "bg-emerald-600 hover:bg-emerald-700"
                       }`}
                       size="sm"
                     >

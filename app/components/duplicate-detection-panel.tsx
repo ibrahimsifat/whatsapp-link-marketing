@@ -47,7 +47,7 @@ export function DuplicateDetectionPanel({
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border border-slate-200 shadow-none">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -70,7 +70,7 @@ export function DuplicateDetectionPanel({
 
       <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
         {showSettings && (
-          <Card className="bg-muted/50">
+          <Card className="bg-slate-50 border-slate-200 shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Detection Settings</CardTitle>
             </CardHeader>
@@ -118,22 +118,22 @@ export function DuplicateDetectionPanel({
 
         {stats.totalGroups > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-            <Card className="p-2 sm:p-3">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3">
               <div className="text-lg sm:text-2xl font-bold text-slate-700">{stats.totalGroups}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground">Duplicate Groups</div>
-            </Card>
-            <Card className="p-2 sm:p-3">
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3">
               <div className="text-lg sm:text-2xl font-bold text-red-600">{stats.totalDuplicates}</div>
               <div className="text-xs text-muted-foreground">Total Duplicates</div>
-            </Card>
-            <Card className="p-2 sm:p-3">
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3">
               <div className="text-lg sm:text-2xl font-bold text-emerald-600">{stats.highConfidence}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground">High Confidence</div>
-            </Card>
-            <Card className="p-2 sm:p-3">
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3">
               <div className="text-lg sm:text-2xl font-bold text-emerald-600">{stats.autoMergeReady}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground">Auto-Merge Ready</div>
-            </Card>
+            </div>
           </div>
         )}
 
@@ -159,7 +159,7 @@ export function DuplicateDetectionPanel({
           <div className="space-y-2 sm:space-y-3">
             <h3 className="font-medium text-sm sm:text-base">Detected Duplicates</h3>
             {duplicateGroups.map((group) => (
-              <Card key={group.id} className="border-l-4 border-l-emerald-500">
+              <Card key={group.id} className="border-l-4 border-l-emerald-500 border-slate-200 shadow-none">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-start justify-between mb-2 sm:mb-3">
                     <div className="flex items-center gap-1.5 sm:gap-2">
@@ -170,7 +170,7 @@ export function DuplicateDetectionPanel({
                     </div>
                     <div className="flex gap-1">
                       {group.autoMergeRecommended && (
-                        <Button size="sm" onClick={() => onAutoMerge(group)} className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs">
+                        <Button size="sm" onClick={() => onAutoMerge(group)} className="h-9 px-2 text-[10px] sm:text-xs">
                           <Merge className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                           Auto-Merge
                         </Button>
@@ -179,12 +179,12 @@ export function DuplicateDetectionPanel({
                         variant="outline"
                         size="sm"
                         onClick={() => onManualMerge(group.contacts)}
-                        className="h-7 sm:h-8 px-2 text-[10px] sm:text-xs"
+                        className="h-9 px-2 text-[10px] sm:text-xs"
                       >
                         <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                         Review
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onIgnoreGroup(group.id)} className="h-7 sm:h-8 px-2">
+                      <Button variant="ghost" size="sm" onClick={() => onIgnoreGroup(group.id)} className="h-9 px-2">
                         <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </Button>
                     </div>

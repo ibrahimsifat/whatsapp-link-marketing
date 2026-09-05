@@ -44,7 +44,7 @@ interface BulkMessageSenderProps {
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null
   customMessage: string
-  onContactStatusUpdate: (contactId: string, status: Contact["status"]) => Promise<void>
+  onContactStatusUpdate: (contactId: string, status: Contact["status"]) => Promise<{ success: boolean; message?: string }>
   onShowToast: (message: string, type: "success" | "error" | "warning" | "info") => void
 }
 
@@ -188,7 +188,7 @@ export function BulkMessageSender({
             <SummaryTile label="Estimated" value={formatDuration(estimatedTime)} icon={<Clock className="h-4 w-4" />} />
           </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-4 grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Message Preview</CardTitle>

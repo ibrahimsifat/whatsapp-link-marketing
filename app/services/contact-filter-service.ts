@@ -61,7 +61,7 @@ export class ContactFilterService {
    * Gets unique categories from contacts
    */
   static getUniqueCategories(contacts: Contact[]): string[] {
-    return Array.from(new Set(contacts.map((c) => c.companyCategory).filter(Boolean)))
+    return Array.from(new Set(contacts.map((c) => c.companyCategory).filter((c): c is string => Boolean(c))))
   }
 
   /**

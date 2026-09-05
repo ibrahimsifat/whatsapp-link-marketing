@@ -39,7 +39,7 @@ export default function Documentation() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
@@ -48,22 +48,22 @@ export default function Documentation() {
               <Button
                 variant="ghost"
                 onClick={() => window.open("/", "_self")}
-                className="text-gray-600 hover:text-gray-900 w-full sm:w-auto justify-start"
+                className="text-slate-600 hover:text-slate-900 w-full sm:w-auto justify-start"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to App
               </Button>
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0">
+                <div className="p-2 bg-emerald-600 rounded-lg flex-shrink-0">
                   <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">WhatsApp Link Generator</h1>
-                  <p className="text-sm sm:text-base text-gray-600">Complete User Documentation</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">WhatsApp Link Generator</h1>
+                  <p className="text-sm sm:text-base text-slate-600">Complete User Documentation</p>
                 </div>
               </div>
             </div>
-            <Badge className="bg-green-100 text-green-800 px-3 py-1 w-fit">v1.1.0</Badge>
+            <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 w-fit">v1.1.0</Badge>
           </div>
         </div>
       </div>
@@ -97,9 +97,9 @@ export default function Documentation() {
                       <button
                         key={item.id}
                         onClick={() => scrollToSection(item.id)}
-                        className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition-colors"
+                        className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-slate-100 transition-colors"
                       >
-                        <Icon className="h-4 w-4 text-gray-500" />
+                        <Icon className="h-4 w-4 text-slate-500" />
                         {item.title}
                       </button>
                     )
@@ -114,12 +114,12 @@ export default function Documentation() {
             {/* Overview */}
             <section id="overview">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <CardTitle className="flex items-center gap-2 text-blue-900">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-900">
                     <BookOpen className="h-6 w-6" />
                     Product Overview
                   </CardTitle>
-                  <CardDescription className="text-blue-700">
+                  <CardDescription className="text-emerald-700">
                     Transform your business communication with automated WhatsApp messaging
                   </CardDescription>
                 </CardHeader>
@@ -154,15 +154,15 @@ export default function Documentation() {
                       <h3 className="font-semibold text-lg">Key Benefits:</h3>
                       <ul className="space-y-2">
                         <li className="flex items-start gap-2">
-                          <Zap className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <Zap className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                           <span>Save 90% of manual messaging time</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <Target className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <Target className="h-5 w-5 text-slate-600 mt-0.5 flex-shrink-0" />
                           <span>Increase response rates with personalization</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <TrendingUp className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                           <span>Scale your outreach to hundreds of contacts</span>
                         </li>
                         <li className="flex items-start gap-2">
@@ -179,7 +179,7 @@ export default function Documentation() {
             {/* Getting Started */}
             <section id="getting-started">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+                <CardHeader className="bg-emerald-50">
                   <CardTitle className="flex items-center gap-2 text-green-900">
                     <Play className="h-6 w-6" />
                     Getting Started
@@ -191,13 +191,13 @@ export default function Documentation() {
                 <CardContent className="p-6">
                   <div className="space-y-6">
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="border-2 border-blue-200 bg-blue-50">
+                      <Card className="border-2 border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4 text-center">
-                          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
                             <span className="text-white font-bold text-lg">1</span>
                           </div>
                           <h3 className="font-semibold mb-2">Prepare Excel File</h3>
-                          <p className="text-sm text-gray-600">Set up your Excel with required columns</p>
+                          <p className="text-sm text-slate-600">Set up your Excel with required columns</p>
                         </CardContent>
                       </Card>
                       <Card className="border-2 border-green-200 bg-green-50">
@@ -206,26 +206,26 @@ export default function Documentation() {
                             <span className="text-white font-bold text-lg">2</span>
                           </div>
                           <h3 className="font-semibold mb-2">Upload & Process</h3>
-                          <p className="text-sm text-gray-600">Upload file and let the system process</p>
+                          <p className="text-sm text-slate-600">Upload file and let the system process</p>
                         </CardContent>
                       </Card>
-                      <Card className="border-2 border-purple-200 bg-purple-50">
+                      <Card className="border-2 border-slate-200 bg-slate-50">
                         <CardContent className="p-4 text-center">
-                          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
                             <span className="text-white font-bold text-lg">3</span>
                           </div>
                           <h3 className="font-semibold mb-2">Send Messages</h3>
-                          <p className="text-sm text-gray-600">Use generated links to send WhatsApp messages</p>
+                          <p className="text-sm text-slate-600">Use generated links to send WhatsApp messages</p>
                         </CardContent>
                       </Card>
                     </div>
 
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <h4 className="font-semibold text-yellow-800">Before You Start</h4>
-                          <ul className="mt-2 space-y-1 text-sm text-yellow-700">
+                          <h4 className="font-semibold text-amber-800">Before You Start</h4>
+                          <ul className="mt-2 space-y-1 text-sm text-amber-700">
                             <li>• Ensure you have WhatsApp Business installed on your device</li>
                             <li>• Prepare your Excel file with business contact information</li>
                             <li>• Have your message templates ready</li>
@@ -241,12 +241,12 @@ export default function Documentation() {
             {/* Excel File Setup */}
             <section id="excel-setup">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50">
-                  <CardTitle className="flex items-center gap-2 text-orange-900">
+                <CardHeader className="bg-amber-50">
+                  <CardTitle className="flex items-center gap-2 text-amber-900">
                     <FileSpreadsheet className="h-6 w-6" />
                     Excel File Setup
                   </CardTitle>
-                  <CardDescription className="text-orange-700">
+                  <CardDescription className="text-amber-700">
                     How to structure your Excel file for optimal results
                   </CardDescription>
                 </CardHeader>
@@ -264,9 +264,9 @@ export default function Documentation() {
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-blue-800 mb-2">📈 Optional Columns (Recommended)</h4>
+                          <h4 className="font-semibold text-emerald-800 mb-2">📈 Optional Columns (Recommended)</h4>
                           <ul className="space-y-1 text-sm">
                             <li>
                               • <strong>Company Name</strong> (for personalization)
@@ -285,11 +285,11 @@ export default function Documentation() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Column Header Examples</h3>
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-slate-50 rounded-lg p-4">
                       <div className="grid md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <h4 className="font-semibold mb-2">Phone Number:</h4>
-                          <ul className="space-y-1 text-gray-600">
+                          <ul className="space-y-1 text-slate-600">
                             <li>• Phone</li>
                             <li>• Mobile</li>
                             <li>• Phone Number</li>
@@ -298,7 +298,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">Company Name:</h4>
-                          <ul className="space-y-1 text-gray-600">
+                          <ul className="space-y-1 text-slate-600">
                             <li>• Company Name</li>
                             <li>• Business Name</li>
                             <li>• Company</li>
@@ -307,7 +307,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">Category:</h4>
-                          <ul className="space-y-1 text-gray-600">
+                          <ul className="space-y-1 text-slate-600">
                             <li>• Category</li>
                             <li>• Industry</li>
                             <li>• Business Type</li>
@@ -316,7 +316,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">Website:</h4>
-                          <ul className="space-y-1 text-gray-600">
+                          <ul className="space-y-1 text-slate-600">
                             <li>• Website</li>
                             <li>• URL</li>
                             <li>• Site</li>
@@ -356,12 +356,12 @@ export default function Documentation() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-blue-800">Pro Tip: Excel Best Practices</h4>
-                        <ul className="mt-2 space-y-1 text-sm text-blue-700">
+                        <h4 className="font-semibold text-emerald-800">Pro Tip: Excel Best Practices</h4>
+                        <ul className="mt-2 space-y-1 text-sm text-emerald-700">
                           <li>• Keep headers in the first row</li>
                           <li>• Avoid merged cells</li>
                           <li>• Format phone numbers as text (not numbers)</li>
@@ -378,61 +378,61 @@ export default function Documentation() {
             {/* Upload Process */}
             <section id="upload-process">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                  <CardTitle className="flex items-center gap-2 text-purple-900">
+                <CardHeader className="bg-slate-50">
+                  <CardTitle className="flex items-center gap-2 text-slate-900">
                     <Upload className="h-6 w-6" />
                     Upload Process
                   </CardTitle>
-                  <CardDescription className="text-purple-700">
+                  <CardDescription className="text-slate-700">
                     Step-by-step guide to uploading and processing your Excel file
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">1</span>
                       </div>
                       <div className="space-y-2">
                         <h3 className="font-semibold">Enter Password</h3>
-                        <p className="text-gray-600">
+                        <p className="text-slate-600">
                           Before uploading, enter the correct password to unlock the upload feature.
                         </p>
-                        <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-2">
-                          <Key className="h-4 w-4 text-gray-600" />
-                          <span className="font-mono text-sm text-gray-700">Password: Pass123123</span>
+                        <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-2">
+                          <Key className="h-4 w-4 text-slate-600" />
+                          <span className="font-mono text-sm text-slate-700">Password: Pass123123</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">2</span>
                       </div>
                       <div className="space-y-2">
                         <h3 className="font-semibold">Choose Upload Method</h3>
-                        <p className="text-gray-600">You have two options to upload your Excel file:</p>
+                        <p className="text-slate-600">You have two options to upload your Excel file:</p>
                         <div className="grid md:grid-cols-2 gap-3">
-                          <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="bg-slate-50 p-3 rounded-lg">
                             <h4 className="font-medium">Drag & Drop</h4>
-                            <p className="text-sm text-gray-600">Simply drag your Excel file onto the upload area</p>
+                            <p className="text-sm text-slate-600">Simply drag your Excel file onto the upload area</p>
                           </div>
-                          <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="bg-slate-50 p-3 rounded-lg">
                             <h4 className="font-medium">File Picker</h4>
-                            <p className="text-sm text-gray-600">Click "Choose File" to browse and select your file</p>
+                            <p className="text-sm text-slate-600">Click "Choose File" to browse and select your file</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">3</span>
                       </div>
                       <div className="space-y-2">
                         <h3 className="font-semibold">File Processing</h3>
-                        <p className="text-gray-600">The system will automatically:</p>
-                        <ul className="space-y-1 text-sm text-gray-600 ml-4">
+                        <p className="text-slate-600">The system will automatically:</p>
+                        <ul className="space-y-1 text-sm text-slate-600 ml-4">
                           <li>• Detect column headers</li>
                           <li>• Extract phone numbers from all columns</li>
                           <li>• Validate and normalize phone numbers</li>
@@ -444,20 +444,20 @@ export default function Documentation() {
                     </div>
 
                     <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-sm">4</span>
                       </div>
                       <div className="space-y-2">
                         <h3 className="font-semibold">Review Results</h3>
-                        <p className="text-gray-600">After processing, you'll see:</p>
+                        <p className="text-slate-600">After processing, you'll see:</p>
                         <div className="grid md:grid-cols-2 gap-3">
                           <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                             <h4 className="font-medium text-green-800">Statistics Dashboard</h4>
                             <p className="text-sm text-green-600">Total contacts, website status, categories</p>
                           </div>
-                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                            <h4 className="font-medium text-blue-800">Contact Cards</h4>
-                            <p className="text-sm text-blue-600">Individual cards for each valid contact</p>
+                          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                            <h4 className="font-medium text-emerald-800">Contact Cards</h4>
+                            <p className="text-sm text-emerald-600">Individual cards for each valid contact</p>
                           </div>
                         </div>
                       </div>
@@ -487,19 +487,19 @@ export default function Documentation() {
             {/* Manual Number Entry */}
             <section id="manual-entry">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50">
-                  <CardTitle className="flex items-center gap-2 text-cyan-900">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-900">
                     <Phone className="h-6 w-6" />
                     Manual Number Entry
                   </CardTitle>
-                  <CardDescription className="text-cyan-700">
+                  <CardDescription className="text-emerald-700">
                     Quickly generate a WhatsApp link for a single phone number
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">How to Use:</h3>
-                    <ul className="space-y-2 text-gray-600">
+                    <ul className="space-y-2 text-slate-600">
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                         <span>Enter a Saudi phone number in the input field.</span>
@@ -518,12 +518,12 @@ export default function Documentation() {
                       </li>
                     </ul>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-blue-800">Note:</h4>
-                        <p className="mt-2 text-sm text-blue-700">
+                        <h4 className="font-semibold text-emerald-800">Note:</h4>
+                        <p className="mt-2 text-sm text-emerald-700">
                           This feature is for single number generation and does not save contacts to your database. For
                           bulk operations and tracking, use the Excel upload.
                         </p>
@@ -537,12 +537,12 @@ export default function Documentation() {
             {/* Message Templates */}
             <section id="templates">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
-                  <CardTitle className="flex items-center gap-2 text-indigo-900">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-900">
                     <MessageSquare className="h-6 w-6" />
                     Message Templates
                   </CardTitle>
-                  <CardDescription className="text-indigo-700">
+                  <CardDescription className="text-emerald-700">
                     Create and manage professional message templates with smart variables
                   </CardDescription>
                 </CardHeader>
@@ -562,13 +562,13 @@ export default function Documentation() {
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="border-orange-200 bg-orange-50">
+                      <Card className="border-amber-200 bg-amber-50">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <Building className="h-4 w-4 text-orange-600" />
-                            <h4 className="font-semibold text-orange-800">No Website Template</h4>
+                            <Building className="h-4 w-4 text-amber-600" />
+                            <h4 className="font-semibold text-amber-800">No Website Template</h4>
                           </div>
-                          <p className="text-sm text-orange-700 mb-2">For companies without websites</p>
+                          <p className="text-sm text-amber-700 mb-2">For companies without websites</p>
                           <div className="bg-white p-2 rounded text-xs font-mono">
                             Hello *{"{companyName}"}*! In today's digital world, having an online presence is crucial...
                           </div>
@@ -580,18 +580,18 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Available Variables</h3>
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4 text-center">
-                          <Building className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                          <h4 className="font-semibold text-blue-800">{"{companyName}"}</h4>
-                          <p className="text-sm text-blue-600">Company or business name</p>
+                          <Building className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                          <h4 className="font-semibold text-emerald-800">{"{companyName}"}</h4>
+                          <p className="text-sm text-emerald-600">Company or business name</p>
                         </CardContent>
                       </Card>
-                      <Card className="border-purple-200 bg-purple-50">
+                      <Card className="border-slate-200 bg-slate-50">
                         <CardContent className="p-4 text-center">
-                          <Tag className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                          <h4 className="font-semibold text-purple-800">{"{companyCategory}"}</h4>
-                          <p className="text-sm text-purple-600">Industry or business category</p>
+                          <Tag className="h-8 w-8 text-slate-600 mx-auto mb-2" />
+                          <h4 className="font-semibold text-slate-800">{"{companyCategory}"}</h4>
+                          <p className="text-sm text-slate-600">Industry or business category</p>
                         </CardContent>
                       </Card>
                       <Card className="border-green-200 bg-green-50">
@@ -608,52 +608,52 @@ export default function Documentation() {
                     <h3 className="font-semibold text-lg">Creating Custom Templates</h3>
                     <div className="space-y-3">
                       <div className="flex items-start gap-4">
-                        <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-white font-bold text-xs">1</span>
                         </div>
                         <div>
                           <h4 className="font-medium">Click "New Template"</h4>
-                          <p className="text-sm text-gray-600">Start creating a new message template</p>
+                          <p className="text-sm text-slate-600">Start creating a new message template</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-4">
-                        <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-white font-bold text-xs">2</span>
                         </div>
                         <div>
                           <h4 className="font-medium">Fill Template Details</h4>
-                          <p className="text-sm text-gray-600">Name, category, target audience, and message content</p>
+                          <p className="text-sm text-slate-600">Name, category, target audience, and message content</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-4">
-                        <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-white font-bold text-xs">3</span>
                         </div>
                         <div>
                           <h4 className="font-medium">Use Variables</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Insert {"{companyName}"}, {"{companyCategory}"}, {"{website}"} for personalization
                           </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-4">
-                        <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-white font-bold text-xs">4</span>
                         </div>
                         <div>
                           <h4 className="font-medium">Save and Use</h4>
-                          <p className="text-sm text-gray-600">Save template and apply to your contact list</p>
+                          <p className="text-sm text-slate-600">Save template and apply to your contact list</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-blue-800">Template Best Practices</h4>
-                        <ul className="mt-2 space-y-1 text-sm text-blue-700">
+                        <h4 className="font-semibold text-emerald-800">Template Best Practices</h4>
+                        <ul className="mt-2 space-y-1 text-sm text-emerald-700">
                           <li>• Keep messages concise and professional</li>
                           <li>• Always include a clear call-to-action</li>
                           <li>• Use variables to personalize each message</li>
@@ -670,35 +670,35 @@ export default function Documentation() {
             {/* Personalization */}
             <section id="personalization">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-pink-50 to-rose-50">
-                  <CardTitle className="flex items-center gap-2 text-pink-900">
+                <CardHeader className="bg-slate-50">
+                  <CardTitle className="flex items-center gap-2 text-slate-900">
                     <Edit className="h-6 w-6" />
                     Message Personalization
                   </CardTitle>
-                  <CardDescription className="text-pink-700">
+                  <CardDescription className="text-slate-700">
                     How the system personalizes messages for each contact
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Automatic Variable Replacement</h3>
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-slate-50 rounded-lg p-4">
                       <h4 className="font-medium mb-3">Example Transformation:</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Template:</p>
+                          <p className="text-sm font-medium text-slate-600">Template:</p>
                           <div className="bg-white p-3 rounded border font-mono text-sm">
                             Hello *{"{companyName}"}*! I see you're in the _{"{companyCategory}"}_ industry. I visited
                             your website at {"{website}"} and I'm impressed!
                           </div>
                         </div>
                         <div className="flex justify-center">
-                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm">↓</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Personalized Message:</p>
+                          <p className="text-sm font-medium text-slate-600">Personalized Message:</p>
                           <div className="bg-green-50 p-3 rounded border font-mono text-sm">
                             Hello *ABC Technology*! I see you're in the _Software Development_ industry. I visited your
                             website at https://abctech.com and I'm impressed!
@@ -711,20 +711,20 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Smart Fallbacks</h3>
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-blue-800 mb-2">No Company Name</h4>
-                          <p className="text-sm text-blue-600 mb-2">Falls back to:</p>
+                          <h4 className="font-semibold text-emerald-800 mb-2">No Company Name</h4>
+                          <p className="text-sm text-emerald-600 mb-2">Falls back to:</p>
                           <div className="bg-white p-2 rounded text-xs font-mono">"there"</div>
-                          <p className="text-xs text-blue-500 mt-1">Hello there! instead of Hello {"{companyName}"}!</p>
+                          <p className="text-xs text-emerald-500 mt-1">Hello there! instead of Hello {"{companyName}"}!</p>
                         </CardContent>
                       </Card>
-                      <Card className="border-purple-200 bg-purple-50">
+                      <Card className="border-slate-200 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-purple-800 mb-2">No Category</h4>
-                          <p className="text-sm text-purple-600 mb-2">Falls back to:</p>
+                          <h4 className="font-semibold text-slate-800 mb-2">No Category</h4>
+                          <p className="text-sm text-slate-600 mb-2">Falls back to:</p>
                           <div className="bg-white p-2 rounded text-xs font-mono">"your industry"</div>
-                          <p className="text-xs text-purple-500 mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             in your industry instead of in {"{companyCategory}"}
                           </p>
                         </CardContent>
@@ -742,7 +742,7 @@ export default function Documentation() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">WhatsApp Formatting</h3>
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-slate-50 rounded-lg p-4">
                       <h4 className="font-medium mb-3">Supported WhatsApp Formatting:</h4>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -783,12 +783,12 @@ export default function Documentation() {
             {/* Filtering & Analytics */}
             <section id="filtering">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50">
-                  <CardTitle className="flex items-center gap-2 text-teal-900">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-900">
                     <BarChart3 className="h-6 w-6" />
                     Filtering & Analytics
                   </CardTitle>
-                  <CardDescription className="text-teal-700">
+                  <CardDescription className="text-emerald-700">
                     Analyze your contacts and filter for targeted messaging
                   </CardDescription>
                 </CardHeader>
@@ -796,11 +796,11 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Business Overview Dashboard</h3>
                     <div className="grid md:grid-cols-4 gap-4">
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4 text-center">
-                          <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-blue-600">150</div>
-                          <div className="text-sm text-blue-500">Total Contacts</div>
+                          <Users className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-emerald-600">150</div>
+                          <div className="text-sm text-emerald-500">Total Contacts</div>
                         </CardContent>
                       </Card>
                       <Card className="border-green-200 bg-green-50">
@@ -810,18 +810,18 @@ export default function Documentation() {
                           <div className="text-sm text-green-500">With Website</div>
                         </CardContent>
                       </Card>
-                      <Card className="border-orange-200 bg-orange-50">
+                      <Card className="border-amber-200 bg-amber-50">
                         <CardContent className="p-4 text-center">
-                          <Building className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-orange-600">61</div>
-                          <div className="text-sm text-orange-500">No Website</div>
+                          <Building className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-amber-600">61</div>
+                          <div className="text-sm text-amber-500">No Website</div>
                         </CardContent>
                       </Card>
-                      <Card className="border-purple-200 bg-purple-50">
+                      <Card className="border-slate-200 bg-slate-50">
                         <CardContent className="p-4 text-center">
-                          <Tag className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-purple-600">12</div>
-                          <div className="text-sm text-purple-500">Categories</div>
+                          <Tag className="h-8 w-8 text-slate-600 mx-auto mb-2" />
+                          <div className="text-2xl font-bold text-slate-600">12</div>
+                          <div className="text-sm text-slate-500">Categories</div>
                         </CardContent>
                       </Card>
                     </div>
@@ -830,13 +830,13 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Filtering Options</h3>
                     <div className="grid md:grid-cols-2 gap-4">
-                      <Card className="border-indigo-200 bg-indigo-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-3">
-                            <Filter className="h-5 w-5 text-indigo-600" />
-                            <h4 className="font-semibold text-indigo-800">Filter by Category</h4>
+                            <Filter className="h-5 w-5 text-emerald-600" />
+                            <h4 className="font-semibold text-emerald-800">Filter by Category</h4>
                           </div>
-                          <ul className="space-y-1 text-sm text-indigo-700">
+                          <ul className="space-y-1 text-sm text-emerald-700">
                             <li>• Technology</li>
                             <li>• Healthcare</li>
                             <li>• Retail</li>
@@ -864,10 +864,10 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Strategic Use Cases</h3>
                     <div className="space-y-3">
-                      <Card className="border-l-4 border-l-blue-500 bg-blue-50">
+                      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-blue-800 mb-2">Target Companies Without Websites</h4>
-                          <p className="text-sm text-blue-700">
+                          <h4 className="font-semibold text-emerald-800 mb-2">Target Companies Without Websites</h4>
+                          <p className="text-sm text-emerald-700">
                             Filter for "No Website" and use website development templates to offer digital services.
                           </p>
                         </CardContent>
@@ -880,10 +880,10 @@ export default function Documentation() {
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-purple-500 bg-purple-50">
+                      <Card className="border-l-4 border-l-slate-500 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-purple-800 mb-2">Established Business Outreach</h4>
-                          <p className="text-sm text-purple-700">
+                          <h4 className="font-semibold text-slate-800 mb-2">Established Business Outreach</h4>
+                          <p className="text-sm text-slate-700">
                             Filter for "With Website" and use partnership or collaboration templates.
                           </p>
                         </CardContent>
@@ -897,7 +897,7 @@ export default function Documentation() {
             {/* WhatsApp Integration */}
             <section id="whatsapp-integration">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+                <CardHeader className="bg-emerald-50">
                   <CardTitle className="flex items-center gap-2 text-green-900">
                     <Smartphone className="h-6 w-6" />
                     WhatsApp Integration
@@ -924,14 +924,14 @@ export default function Documentation() {
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-3">
-                            <Copy className="h-5 w-5 text-blue-600" />
-                            <h4 className="font-semibold text-blue-800">Copy Link Button</h4>
+                            <Copy className="h-5 w-5 text-emerald-600" />
+                            <h4 className="font-semibold text-emerald-800">Copy Link Button</h4>
                           </div>
-                          <p className="text-sm text-blue-700 mb-2">Copies the WhatsApp link to clipboard</p>
-                          <ul className="space-y-1 text-xs text-blue-600">
+                          <p className="text-sm text-emerald-700 mb-2">Copies the WhatsApp link to clipboard</p>
+                          <ul className="space-y-1 text-xs text-emerald-600">
                             <li>• Share via email or other apps</li>
                             <li>• Save for later use</li>
                             <li>• Bulk copy for campaigns</li>
@@ -940,12 +940,12 @@ export default function Documentation() {
                       </Card>
                     </div>
                     {/* Add this new block */}
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <h4 className="font-semibold text-yellow-800">Important Note on Batch Sending:</h4>
-                          <p className="mt-2 text-sm text-yellow-700">
+                          <h4 className="font-semibold text-amber-800">Important Note on Batch Sending:</h4>
+                          <p className="mt-2 text-sm text-amber-700">
                             When using the "Send All Filtered" button, your browser's pop-up blocker might prevent new
                             WhatsApp tabs from opening. Please ensure you **allow pop-ups for this site** in your
                             browser settings to enable this feature.
@@ -964,7 +964,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-medium">Install WhatsApp Business</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Download WhatsApp Business app on your phone or use WhatsApp Web
                           </p>
                         </div>
@@ -975,7 +975,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-medium">Set Up Business Profile</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Add your business name, description, and contact information
                           </p>
                         </div>
@@ -986,7 +986,7 @@ export default function Documentation() {
                         </div>
                         <div>
                           <h4 className="font-medium">Use Generated Links</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Click "Open WhatsApp" buttons to start conversations with pre-filled messages
                           </p>
                         </div>
@@ -997,10 +997,10 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Best Practices for WhatsApp Business</h3>
                     <div className="grid md:grid-cols-2 gap-4">
-                      <Card className="border-yellow-200 bg-yellow-50">
+                      <Card className="border-amber-200 bg-amber-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-yellow-800 mb-2">✅ Do's</h4>
-                          <ul className="space-y-1 text-sm text-yellow-700">
+                          <h4 className="font-semibold text-amber-800 mb-2">✅ Do's</h4>
+                          <ul className="space-y-1 text-sm text-amber-700">
                             <li>• Send messages during business hours</li>
                             <li>• Personalize each message</li>
                             <li>• Be professional and respectful</li>
@@ -1053,7 +1053,7 @@ export default function Documentation() {
             {/* Best Practices */}
             <section id="best-practices">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50">
+                <CardHeader className="bg-amber-50">
                   <CardTitle className="flex items-center gap-2 text-amber-900">
                     <Target className="h-6 w-6" />
                     Best Practices
@@ -1126,10 +1126,10 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Campaign Strategy</h3>
                     <div className="space-y-3">
-                      <Card className="border-l-4 border-l-blue-500 bg-blue-50">
+                      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-blue-800 mb-2">1. Segment Your Audience</h4>
-                          <p className="text-sm text-blue-700">
+                          <h4 className="font-semibold text-emerald-800 mb-2">1. Segment Your Audience</h4>
+                          <p className="text-sm text-emerald-700">
                             Use filters to create targeted campaigns for different business types, industries, or
                             website status.
                           </p>
@@ -1144,18 +1144,18 @@ export default function Documentation() {
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-purple-500 bg-purple-50">
+                      <Card className="border-l-4 border-l-slate-500 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-purple-800 mb-2">3. Follow Up Strategically</h4>
-                          <p className="text-sm text-purple-700">
+                          <h4 className="font-semibold text-slate-800 mb-2">3. Follow Up Strategically</h4>
+                          <p className="text-sm text-slate-700">
                             Plan follow-up messages for non-responders, but wait at least 3-5 days between messages.
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-orange-500 bg-orange-50">
+                      <Card className="border-l-4 border-l-amber-500 bg-amber-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-orange-800 mb-2">4. Track and Analyze</h4>
-                          <p className="text-sm text-orange-700">
+                          <h4 className="font-semibold text-amber-800 mb-2">4. Track and Analyze</h4>
+                          <p className="text-sm text-amber-700">
                             Keep track of response rates, successful conversions, and adjust your strategy accordingly.
                           </p>
                         </CardContent>
@@ -1165,12 +1165,12 @@ export default function Documentation() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Legal and Compliance</h3>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <h4 className="font-semibold text-yellow-800">Important Compliance Notes</h4>
-                          <ul className="mt-2 space-y-1 text-sm text-yellow-700">
+                          <h4 className="font-semibold text-amber-800">Important Compliance Notes</h4>
+                          <ul className="mt-2 space-y-1 text-sm text-amber-700">
                             <li>• Always respect opt-out requests immediately</li>
                             <li>• Include your business name and contact information</li>
                             <li>• Follow local regulations for business messaging</li>
@@ -1188,7 +1188,7 @@ export default function Documentation() {
             {/* Troubleshooting */}
             <section id="troubleshooting">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50">
+                <CardHeader className="bg-red-50">
                   <CardTitle className="flex items-center gap-2 text-red-900">
                     <Settings className="h-6 w-6" />
                     Troubleshooting
@@ -1223,26 +1223,26 @@ export default function Documentation() {
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-orange-500 bg-orange-50">
+                      <Card className="border-l-4 border-l-amber-500 bg-amber-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-orange-800 mb-2">⚠️ "No phone numbers found"</h4>
-                          <p className="text-sm text-orange-700 mb-2">
+                          <h4 className="font-semibold text-amber-800 mb-2">⚠️ "No phone numbers found"</h4>
+                          <p className="text-sm text-amber-700 mb-2">
                             <strong>Solution:</strong> Check your phone number format and column headers
                           </p>
-                          <ul className="text-xs text-orange-600 space-y-1">
+                          <ul className="text-xs text-amber-600 space-y-1">
                             <li>• Ensure phone numbers start with 05, 5, +966, or 966</li>
                             <li>• Use column headers like "Phone", "Mobile", "Number"</li>
                             <li>• Format cells as text, not numbers</li>
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-yellow-500 bg-yellow-50">
+                      <Card className="border-l-4 border-l-amber-500 bg-amber-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-yellow-800 mb-2">⚠️ "File too large"</h4>
-                          <p className="text-sm text-yellow-700 mb-2">
+                          <h4 className="font-semibold text-amber-800 mb-2">⚠️ "File too large"</h4>
+                          <p className="text-sm text-amber-700 mb-2">
                             <strong>Solution:</strong> Reduce file size or split into smaller files
                           </p>
-                          <ul className="text-xs text-yellow-600 space-y-1">
+                          <ul className="text-xs text-amber-600 space-y-1">
                             <li>• Maximum file size is 10MB</li>
                             <li>• Remove unnecessary columns and rows</li>
                             <li>• Split large datasets into multiple files</li>
@@ -1255,13 +1255,13 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">WhatsApp Link Issues</h3>
                     <div className="space-y-3">
-                      <Card className="border-l-4 border-l-blue-500 bg-blue-50">
+                      <Card className="border-l-4 border-l-emerald-500 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-blue-800 mb-2">❌ "WhatsApp link doesn't work"</h4>
-                          <p className="text-sm text-blue-700 mb-2">
+                          <h4 className="font-semibold text-emerald-800 mb-2">❌ "WhatsApp link doesn't work"</h4>
+                          <p className="text-sm text-emerald-700 mb-2">
                             <strong>Solution:</strong> Check WhatsApp installation and phone number format
                           </p>
-                          <ul className="text-xs text-blue-600 space-y-1">
+                          <ul className="text-xs text-emerald-600 space-y-1">
                             <li>• Ensure WhatsApp or WhatsApp Business is installed</li>
                             <li>• Try opening link in different browser</li>
                             <li>• Check if phone number is valid Saudi format</li>
@@ -1287,13 +1287,13 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Template Issues</h3>
                     <div className="space-y-3">
-                      <Card className="border-l-4 border-l-purple-500 bg-purple-50">
+                      <Card className="border-l-4 border-l-slate-500 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-purple-800 mb-2">❌ "Variables not replacing"</h4>
-                          <p className="text-sm text-purple-700 mb-2">
+                          <h4 className="font-semibold text-slate-800 mb-2">❌ "Variables not replacing"</h4>
+                          <p className="text-sm text-slate-700 mb-2">
                             <strong>Solution:</strong> Check variable syntax and data availability
                           </p>
-                          <ul className="text-xs text-purple-600 space-y-1">
+                          <ul className="text-xs text-slate-600 space-y-1">
                             <li>
                               • Use exact syntax: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}
                             </li>
@@ -1323,12 +1323,12 @@ export default function Documentation() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-blue-800">Still Having Issues?</h4>
-                        <ul className="mt-2 space-y-1 text-sm text-blue-700">
+                        <h4 className="font-semibold text-emerald-800">Still Having Issues?</h4>
+                        <ul className="mt-2 space-y-1 text-sm text-emerald-700">
                           <li>• Clear your browser cache and cookies</li>
                           <li>• Try using a different browser (Chrome recommended)</li>
                           <li>• Check your internet connection</li>
@@ -1345,12 +1345,12 @@ export default function Documentation() {
             {/* Pro Tips */}
             <section id="tips">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50">
-                  <CardTitle className="flex items-center gap-2 text-violet-900">
+                <CardHeader className="bg-emerald-50">
+                  <CardTitle className="flex items-center gap-2 text-emerald-900">
                     <Lightbulb className="h-6 w-6" />
                     Pro Tips & Advanced Features
                   </CardTitle>
-                  <CardDescription className="text-violet-700">
+                  <CardDescription className="text-emerald-700">
                     Expert tips to maximize your WhatsApp marketing effectiveness
                   </CardDescription>
                 </CardHeader>
@@ -1371,13 +1371,13 @@ export default function Documentation() {
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-blue-200 bg-blue-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <Clock className="h-5 w-5 text-blue-600" />
-                            <h4 className="font-semibold text-blue-800">Workflow Optimization</h4>
+                            <Clock className="h-5 w-5 text-emerald-600" />
+                            <h4 className="font-semibold text-emerald-800">Workflow Optimization</h4>
                           </div>
-                          <ul className="space-y-1 text-sm text-blue-700">
+                          <ul className="space-y-1 text-sm text-emerald-700">
                             <li>• Prepare Excel files in advance</li>
                             <li>• Create templates for different scenarios</li>
                             <li>• Use filters to target specific audiences</li>
@@ -1390,28 +1390,28 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Advanced Strategies</h3>
                     <div className="space-y-3">
-                      <Card className="border-l-4 border-l-indigo-500 bg-indigo-50">
+                      <Card className="border-l-4 border-l-indigo-500 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-indigo-800 mb-2">🎯 A/B Testing Templates</h4>
-                          <p className="text-sm text-indigo-700">
+                          <h4 className="font-semibold text-emerald-800 mb-2">🎯 A/B Testing Templates</h4>
+                          <p className="text-sm text-emerald-700">
                             Create multiple versions of the same template and test which performs better. Track response
                             rates for each version.
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-pink-500 bg-pink-50">
+                      <Card className="border-l-4 border-l-pink-500 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-pink-800 mb-2">📊 Response Tracking</h4>
-                          <p className="text-sm text-pink-700">
+                          <h4 className="font-semibold text-slate-800 mb-2">📊 Response Tracking</h4>
+                          <p className="text-sm text-slate-700">
                             Keep a spreadsheet to track which contacts responded, conversion rates, and successful
                             follow-ups.
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="border-l-4 border-l-teal-500 bg-teal-50">
+                      <Card className="border-l-4 border-l-teal-500 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-teal-800 mb-2">🔄 Follow-up Sequences</h4>
-                          <p className="text-sm text-teal-700">
+                          <h4 className="font-semibold text-emerald-800 mb-2">🔄 Follow-up Sequences</h4>
+                          <p className="text-sm text-emerald-700">
                             Plan 2-3 follow-up messages for non-responders, spaced 3-5 days apart with different value
                             propositions.
                           </p>
@@ -1423,30 +1423,30 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Industry-Specific Tips</h3>
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Card className="border-orange-200 bg-orange-50">
+                      <Card className="border-amber-200 bg-amber-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-orange-800 mb-2">🏥 Healthcare</h4>
-                          <ul className="space-y-1 text-sm text-orange-700">
+                          <h4 className="font-semibold text-amber-800 mb-2">🏥 Healthcare</h4>
+                          <ul className="space-y-1 text-sm text-amber-700">
                             <li>• Focus on patient care improvements</li>
                             <li>• Mention compliance and security</li>
                             <li>• Use professional medical terminology</li>
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-purple-200 bg-purple-50">
+                      <Card className="border-slate-200 bg-slate-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-purple-800 mb-2">🛒 Retail</h4>
-                          <ul className="space-y-1 text-sm text-purple-700">
+                          <h4 className="font-semibold text-slate-800 mb-2">🛒 Retail</h4>
+                          <ul className="space-y-1 text-sm text-slate-700">
                             <li>• Emphasize customer experience</li>
                             <li>• Mention inventory management</li>
                             <li>• Focus on sales growth</li>
                           </ul>
                         </CardContent>
                       </Card>
-                      <Card className="border-cyan-200 bg-cyan-50">
+                      <Card className="border-emerald-200 bg-emerald-50">
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-cyan-800 mb-2">💻 Technology</h4>
-                          <ul className="space-y-1 text-sm text-cyan-700">
+                          <h4 className="font-semibold text-emerald-800 mb-2">💻 Technology</h4>
+                          <ul className="space-y-1 text-sm text-emerald-700">
                             <li>• Highlight innovation and efficiency</li>
                             <li>• Mention scalability solutions</li>
                             <li>• Use technical but accessible language</li>
@@ -1456,23 +1456,23 @@ export default function Documentation() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
                     <div className="flex items-start gap-3">
-                      <TrendingUp className="h-6 w-6 text-yellow-600 mt-0.5 flex-shrink-0" />
+                      <TrendingUp className="h-6 w-6 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-yellow-800 text-lg mb-3">Success Metrics to Track</h4>
+                        <h4 className="font-semibold text-amber-800 text-lg mb-3">Success Metrics to Track</h4>
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <h5 className="font-medium text-yellow-800 mb-2">Immediate Metrics:</h5>
-                            <ul className="space-y-1 text-sm text-yellow-700">
+                            <h5 className="font-medium text-amber-800 mb-2">Immediate Metrics:</h5>
+                            <ul className="space-y-1 text-sm text-amber-700">
                               <li>• Message delivery rate</li>
                               <li>• Response rate (within 24 hours)</li>
                               <li>• Link click-through rate</li>
                             </ul>
                           </div>
                           <div>
-                            <h5 className="font-medium text-yellow-800 mb-2">Long-term Metrics:</h5>
-                            <ul className="space-y-1 text-sm text-yellow-700">
+                            <h5 className="font-medium text-amber-800 mb-2">Long-term Metrics:</h5>
+                            <ul className="space-y-1 text-sm text-amber-700">
                               <li>• Conversion to meetings/calls</li>
                               <li>• Actual business generated</li>
                               <li>• Customer lifetime value</li>
@@ -1487,16 +1487,16 @@ export default function Documentation() {
             </section>
 
             {/* Footer */}
-            <Card className="bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200">
+            <Card className="bg-slate-50 border-slate-200">
               <CardContent className="p-6 text-center">
                 <div className="space-y-4">
                   <div className="flex items-center justify-center gap-3">
-                    <div className="p-2 bg-blue-600 rounded-lg">
+                    <div className="p-2 bg-emerald-600 rounded-lg">
                       <MessageSquare className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Ready to Get Started?</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">Ready to Get Started?</h2>
                   </div>
-                  <p className="text-gray-600 max-w-2xl mx-auto">
+                  <p className="text-slate-600 max-w-2xl mx-auto">
                     Now that you understand how to use the WhatsApp Link Generator effectively, it's time to put this
                     knowledge into practice and transform your business communication.
                   </p>
@@ -1514,8 +1514,8 @@ export default function Documentation() {
                       Review Documentation
                     </Button>
                   </div>
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-500">
+                  <div className="pt-4 border-t border-slate-200">
+                    <p className="text-sm text-slate-500">
                       Documentation Version 1.1.0 • Last Updated: {new Date().toLocaleDateString()}
                     </p>
                   </div>

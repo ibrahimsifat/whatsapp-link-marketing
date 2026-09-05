@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, FileSpreadsheet, MessageCircle, Users, ChevronDown, ChevronUp } from "lucide-react"
+import { Upload, FileSpreadsheet, MessageCircle, Users } from "lucide-react"
+import { SectionCard } from "@/components/ui/section-card"
 import { UploadSection } from "@/app/components/upload-section"
 import { GoogleSheetsImport } from "@/app/components/google-sheets-import"
 import { MessageTemplates } from "@/app/components/message-templates"
@@ -32,10 +32,10 @@ interface UploadDataSectionProps {
   database: any
   isLoading: boolean
   onSaveContacts: (contacts: Contact[]) => Promise<any>
-  onMergeContacts: (contacts: Contact[]) => Promise<any>
+  onMergeContacts: (contacts: Contact[], source: string) => Promise<any>
   onUpdateContactStatus: (id: string, status: Contact["status"], notes?: string) => Promise<any>
   onDeleteContact: (id: string) => Promise<any>
-  onExportContacts: (contacts: Contact[]) => void
+  onExportContacts: () => { success: boolean; message: string }
   onClearAllContacts: () => Promise<any>
   currentContacts: Contact[]
   onUpdateCurrentContacts: (contacts: Contact[]) => void
@@ -72,35 +72,18 @@ export function UploadDataSection({
   onShowToast,
 }: UploadDataSectionProps) {
   return (
-    <Card className="border border-slate-200 bg-white shadow-none">
-      <CardHeader
-        className="bg-white rounded-t-lg border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors p-4 sm:p-5"
-        onClick={onToggle}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg flex-shrink-0">
-              <Upload className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div className="min-w-0">
-              <CardTitle className="text-slate-800 text-lg sm:text-xl">Upload Business Data</CardTitle>
-              <CardDescription className="text-slate-600 text-xs sm:text-sm break-words">
-                {isExpanded
-                  ? "Import contacts from Excel, CSV files or Google Sheets"
-                  : `${contactsCount} contacts loaded • Click to expand upload options`}
-              </CardDescription>
-            </div>
-          </div>
-          {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-slate-500 flex-shrink-0 mt-1" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-slate-500 flex-shrink-0 mt-1" />
-          )}
-        </div>
-      </CardHeader>
-      {isExpanded && (
-        <CardContent className="p-3 sm:p-4 lg:p-5">
-          <Tabs defaultValue="upload" className="space-y-3 sm:space-y-4">
+    <SectionCard
+      icon={Upload}
+      title="Upload Business Data"
+      description={
+        isExpanded
+          ? "Import contacts from Excel, CSV files or Google Sheets"
+          : `${contactsCount} contacts loaded • Click to expand upload options`
+      }
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <Tabs defaultValue="upload" className="space-y-3 sm:space-y-4">
             <div className="-mx-1 overflow-x-auto pb-1">
               <TabsList className="grid min-w-max grid-cols-4 bg-slate-100 border border-slate-200 shadow-none rounded-lg p-1 sm:w-full">
                 <TabsTrigger
@@ -173,9 +156,7 @@ export function UploadDataSection({
                 onUpdateCurrentContacts={onUpdateCurrentContacts}
               />
             </TabsContent>
-          </Tabs>
-        </CardContent>
-      )}
-    </Card>
+      </Tabs>
+    </SectionCard>
   )
 }

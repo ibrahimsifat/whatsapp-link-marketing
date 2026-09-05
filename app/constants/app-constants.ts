@@ -13,6 +13,10 @@ export const APP_CONSTANTS = {
   /** Application name displayed in UI */
   APP_NAME: "WhatsApp Business Link Generator",
 
+  /** Application description used for SEO metadata */
+  APP_DESCRIPTION:
+    "Generate personalized WhatsApp click-to-chat links in bulk from Excel, CSV, or Google Sheets contact lists.",
+
   /** Version number for database migrations */
   APP_VERSION: "1.0.0",
 
