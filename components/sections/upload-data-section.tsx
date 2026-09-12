@@ -10,6 +10,7 @@ import { GoogleSheetsImport } from "@/app/components/google-sheets-import"
 import { MessageTemplates } from "@/app/components/message-templates"
 import { ContactManagement } from "@/app/components/contact-management"
 import type { Contact, MessageTemplate } from "@/app/types/contact"
+import type { TemplateGroup } from "@/app/types/template-group"
 
 interface UploadDataSectionProps {
   isExpanded: boolean
@@ -22,11 +23,13 @@ interface UploadDataSectionProps {
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   // Template props
   templates: MessageTemplate[]
-  selectedTemplate: MessageTemplate | null
-  onTemplateSelect: (template: MessageTemplate) => void
+  /** Group id of the selected template, or null when none is selected. */
+  selectedGroupId: string | null
+  onTemplateSelect: (group: TemplateGroup) => void
   onTemplateCreate: (template: MessageTemplate) => void
   onTemplateUpdate: (template: MessageTemplate) => void
   onTemplateDelete: (templateId: string) => void
+  onTemplateDeleteGroup: (templateId: string) => void
   availableCustomVariables: string[]
   // Contact management props
   database: any
@@ -35,7 +38,7 @@ interface UploadDataSectionProps {
   onMergeContacts: (contacts: Contact[], source: string) => Promise<any>
   onUpdateContactStatus: (id: string, status: Contact["status"], notes?: string) => Promise<any>
   onDeleteContact: (id: string) => Promise<any>
-  onExportContacts: () => { success: boolean; message: string }
+  onExportContacts: () => Promise<{ success: boolean; message: string }>
   onClearAllContacts: () => Promise<any>
   currentContacts: Contact[]
   onUpdateCurrentContacts: (contacts: Contact[]) => void
@@ -52,11 +55,12 @@ export function UploadDataSection({
   onDrop,
   onFileChange,
   templates,
-  selectedTemplate,
+  selectedGroupId,
   onTemplateSelect,
   onTemplateCreate,
   onTemplateUpdate,
   onTemplateDelete,
+  onTemplateDeleteGroup,
   availableCustomVariables,
   database,
   isLoading,
@@ -134,11 +138,13 @@ export function UploadDataSection({
               <MessageTemplates
                 templates={templates}
                 onTemplateSelect={onTemplateSelect}
-                selectedTemplate={selectedTemplate}
+                selectedGroupId={selectedGroupId}
                 onTemplateCreate={onTemplateCreate}
                 onTemplateUpdate={onTemplateUpdate}
                 onTemplateDelete={onTemplateDelete}
+                onTemplateDeleteGroup={onTemplateDeleteGroup}
                 availableCustomVariables={availableCustomVariables}
+                contacts={currentContacts}
               />
             </TabsContent>
 

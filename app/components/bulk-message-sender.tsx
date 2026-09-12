@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -32,10 +33,15 @@ import {
   XCircle,
 } from "lucide-react"
 import type { Contact, MessageTemplate } from "../types/contact"
+import type { TemplateGroup } from "../types/template-group"
+import { isLanguageRoutingActive, summariseLanguageCoverage } from "../types/template-group"
+import { TemplateService } from "../services/template-service"
+import { languageLabel } from "@/lib/i18n/languages"
 import {
   EnhancedBulkMessageService,
   type BulkMessageProgress,
   type BulkMessageSettings,
+  type MessageResolver,
 } from "../services/enhanced-bulk-message-service"
 
 interface BulkMessageSenderProps {
@@ -43,6 +49,12 @@ interface BulkMessageSenderProps {
   selectedContacts: Contact[]
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null
+  /**
+   * The multilingual template in play, if one is selected. Its presence is
+   * what switches the run from "one message for everyone" to "each contact
+   * gets their own language".
+   */
+  selectedGroup: TemplateGroup | null
   customMessage: string
   onContactStatusUpdate: (contactId: string, status: Contact["status"]) => Promise<{ success: boolean; message?: string }>
   onShowToast: (message: string, type: "success" | "error" | "warning" | "info") => void
@@ -52,6 +64,7 @@ export function BulkMessageSender({
   contacts,
   selectedContacts,
   selectedTemplate,
+  selectedGroup,
   customMessage,
   onContactStatusUpdate,
   onShowToast,
@@ -73,6 +86,26 @@ export function BulkMessageSender({
     return validation.valid.length * delay + batchBreaks
   }, [settings.batchDelayMinutes, settings.batchSize, settings.delayBetweenMessages, settings.randomDelayRange, validation.valid.length])
 
+  /**
+   * Whether this run sends one message or one per language.
+   *
+   * Editing the message by hand is an explicit override: the operator wrote
+   * that exact text and every contact gets it. Leaving it as the template left
+   * it means the template is still in charge, so each contact is sent their own
+   * language version.
+   */
+  const usesLanguageRouting = isLanguageRoutingActive(selectedGroup, selectedTemplate, customMessage)
+
+  const coverage = useMemo(() => {
+    if (!selectedGroup) return []
+    return summariseLanguageCoverage(selectedGroup, targetContacts)
+  }, [selectedGroup, targetContacts])
+
+  const fallbackContacts = useMemo(
+    () => coverage.filter((entry) => !entry.covered).reduce((total, entry) => total + entry.contactCount, 0),
+    [coverage],
+  )
+
   const previewMessage = useMemo(() => {
     const sampleContact = validation.valid[0] || targetContacts[0]
     if (!sampleContact || !customMessage.trim()) return ""
@@ -81,6 +114,8 @@ export function BulkMessageSender({
       .replace(/{companyName}/g, sampleContact.companyName || "[Company Name]")
       .replace(/{companyCategory}/g, sampleContact.companyCategory || "[Category]")
       .replace(/{website}/g, sampleContact.website || "[Website]")
+      .replace(/{city}/g, sampleContact.city || "[City]")
+      .replace(/{language}/g, sampleContact.language || "[Language]")
       .replace(/{phone}/g, sampleContact.normalized || sampleContact.original || "[Phone]")
 
     if (sampleContact.dynamicData) {
@@ -122,9 +157,24 @@ export function BulkMessageSender({
     if (!confirmed) return
 
     try {
+      // With a template selected and the message untouched, resolve per contact
+      // so each company is written to in its own language, with that language's
+      // image. Otherwise send the hand-written message to everyone.
+      const resolver: MessageResolver | string =
+        usesLanguageRouting && selectedGroup
+          ? (contact) => {
+              const rendered = TemplateService.renderForContact(selectedGroup, contact)
+              return {
+                message: rendered.message,
+                language: rendered.variant.language,
+                usedFallback: rendered.usedFallback,
+              }
+            }
+          : customMessage
+
       const result = await EnhancedBulkMessageService.sendBulkMessages(
         validation.valid,
-        customMessage,
+        resolver,
         settings,
         setProgress,
         async (updatedContact) => {
@@ -132,12 +182,73 @@ export function BulkMessageSender({
         },
       )
 
-      onShowToast(`Bulk messaging finished. Sent: ${result.successful}, Failed: ${result.failed}`, "success")
+      const languageBreakdown = Object.entries(result.languageCounts)
+        .filter(([language]) => language !== "unknown")
+        .map(([language, count]) => `${count} ${languageLabel(language)}`)
+        .join(", ")
+
+      const summary = [
+        `Bulk messaging finished. Sent: ${result.successful}, Failed: ${result.failed}`,
+        languageBreakdown && `By language: ${languageBreakdown}`,
+        result.fallbackCount > 0 && `${result.fallbackCount} used the default language version`,
+      ]
+        .filter(Boolean)
+        .join(". ")
+
+      onShowToast(summary, "success")
     } catch (error) {
       onShowToast(error instanceof Error ? error.message : "Bulk messaging failed", "error")
     } finally {
       setProgress(null)
     }
+  }
+
+  /** Pre-send breakdown: who gets which language before anything is sent. */
+  const renderLanguagePanel = () => {
+    if (!selectedGroup) return null
+
+    return (
+      <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-sm font-medium">Language routing</Label>
+          <Badge variant={usesLanguageRouting ? "default" : "outline"} className="text-[10px]">
+            {usesLanguageRouting ? "On" : "Off - using edited message"}
+          </Badge>
+        </div>
+
+        {usesLanguageRouting ? (
+          <>
+            <p className="text-xs text-slate-600">
+              Each contact receives the <strong>{selectedGroup.name}</strong> version matching their language.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {coverage.map((entry) => (
+                <Badge
+                  key={entry.language ?? "none"}
+                  variant={entry.covered ? "secondary" : "outline"}
+                  className={entry.covered ? "text-[10px]" : "border-amber-300 bg-amber-50 text-[10px] text-amber-800"}
+                >
+                  {entry.contactCount} {entry.language ? languageLabel(entry.language) : "No language set"}
+                  {!entry.covered && " -> default"}
+                </Badge>
+              ))}
+            </div>
+            {fallbackContacts > 0 && (
+              <p className="text-xs text-amber-700">
+                {fallbackContacts} contact{fallbackContacts === 1 ? "" : "s"} have no version in their language and will
+                receive the {languageLabel(selectedGroup.fallback.language)} version. Add the missing versions in
+                Message Templates to reach them in their own language.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-slate-600">
+            You edited the message, so everyone receives that exact text. Re-select the template to send each contact
+            their own language version.
+          </p>
+        )}
+      </div>
+    )
   }
 
   const handlePause = () => {
@@ -203,6 +314,8 @@ export function BulkMessageSender({
                     {previewMessage || "Write a message first to see the preview."}
                   </div>
                 </div>
+
+                {renderLanguagePanel()}
 
                 {validation.invalid.length > 0 && (
                   <Alert className="border-amber-200 bg-amber-50">

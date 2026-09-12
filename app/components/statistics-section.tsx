@@ -18,6 +18,7 @@ import {
 import { BarChart3, Download, Trash2 } from "lucide-react"
 import { BulkMessageSender } from "./bulk-message-sender"
 import type { Contact, MessageTemplate } from "../types/contact"
+import type { TemplateGroup } from "../types/template-group"
 
 interface StatisticsSectionProps {
   filteredContacts: Contact[]
@@ -25,6 +26,7 @@ interface StatisticsSectionProps {
   selectedContacts: Contact[]
   templates: MessageTemplate[]
   selectedTemplate: MessageTemplate | null
+  selectedGroup: TemplateGroup | null
   customMessage: string
   onSelectAllVisible: () => void
   onClearSelection: () => void
@@ -40,6 +42,7 @@ export function StatisticsSection({
   selectedContacts,
   templates,
   selectedTemplate,
+  selectedGroup,
   customMessage,
   onSelectAllVisible,
   onClearSelection,
@@ -112,6 +115,7 @@ export function StatisticsSection({
               selectedContacts={selectedContacts}
               templates={templates}
               selectedTemplate={selectedTemplate}
+              selectedGroup={selectedGroup}
               customMessage={customMessage}
               onContactStatusUpdate={onContactStatusUpdate}
               onShowToast={onShowToast}

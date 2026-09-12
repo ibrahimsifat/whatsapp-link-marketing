@@ -5,12 +5,29 @@ import { WhatsAppService } from "../services/whatsapp-service"
 import { TemplateService } from "../services/template-service"
 import { ToastUtils } from "../utils/toast-utils"
 import type { Contact } from "../types/contact"
+import type { TemplateGroup } from "../types/template-group"
 
 export function useContactOperations(
   contacts: Contact[],
   customMessage: string,
   onContactsUpdate: (contacts: Contact[]) => void,
+  /**
+   * Set while a multilingual template is driving the message. The links stored
+   * against each contact then carry that contact's own language version, so the
+   * link in the list matches what a bulk run would send.
+   */
+  languageRoutingGroup: TemplateGroup | null = null,
 ) {
+  const buildLink = (contact: Contact, message: string) => {
+    if (languageRoutingGroup) {
+      return WhatsAppService.generateWhatsAppLink(
+        contact.normalized,
+        TemplateService.renderForContact(languageRoutingGroup, contact).message,
+      )
+    }
+    return WhatsAppService.generateWhatsAppLink(contact.normalized, TemplateService.replaceVariables(message, contact))
+  }
+
   const handleImportContacts = (newContacts: Contact[]) => {
     const existingNumbers = new Set(contacts.map((c) => c.normalized))
     const uniqueNewContacts = newContacts.filter((contact) => !existingNumbers.has(contact.normalized))
@@ -19,10 +36,7 @@ export function useContactOperations(
       const updatedContacts = [...contacts, ...uniqueNewContacts]
       const finalContacts = updatedContacts.map((contact) => ({
         ...contact,
-        whatsappLink: WhatsAppService.generateWhatsAppLink(
-          contact.normalized,
-          TemplateService.replaceVariables(customMessage, contact),
-        ),
+        whatsappLink: buildLink(contact, customMessage),
       }))
       onContactsUpdate(finalContacts)
     }
@@ -32,10 +46,7 @@ export function useContactOperations(
     const messageToUse = message || customMessage
     const updatedContacts = contacts.map((contact) => ({
       ...contact,
-      whatsappLink: WhatsAppService.generateWhatsAppLink(
-        contact.normalized,
-        TemplateService.replaceVariables(messageToUse, contact),
-      ),
+      whatsappLink: buildLink(contact, messageToUse),
     }))
     onContactsUpdate(updatedContacts)
   }

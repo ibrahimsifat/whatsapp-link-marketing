@@ -41,6 +41,8 @@ import {
   Calendar,
   User,
   FileText,
+  MapPin,
+  Languages,
 } from "lucide-react"
 import type { Contact } from "../types/contact"
 
@@ -188,6 +190,18 @@ export function ContactCard({
                   </a>
                 </div>
               )}
+              {contact.city && (
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <MapPin className="h-3 w-3 text-slate-400" />
+                  <span className="break-words">{contact.city}</span>
+                </div>
+              )}
+              {contact.language && (
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <Languages className="h-3 w-3 text-slate-400" />
+                  <span className="break-words">{contact.language}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -281,6 +295,28 @@ export function ContactCard({
                       id="website"
                       value={editedContact.website || ""}
                       onChange={(e) => setEditedContact({ ...editedContact, website: e.target.value })}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="text-sm font-medium">
+                      City
+                    </Label>
+                    <Input
+                      id="city"
+                      value={editedContact.city || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, city: e.target.value })}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="language" className="text-sm font-medium">
+                      Language
+                    </Label>
+                    <Input
+                      id="language"
+                      value={editedContact.language || ""}
+                      onChange={(e) => setEditedContact({ ...editedContact, language: e.target.value })}
                       className="text-sm"
                     />
                   </div>

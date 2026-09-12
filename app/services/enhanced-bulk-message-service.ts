@@ -45,7 +45,33 @@ export interface BulkMessageResult {
   averageDelayUsed: number
   batchesProcessed: number
   errors: Array<{ contact: Contact; error: string }>
+  /** How many messages went out in each language, keyed by language code. */
+  languageCounts: Record<string, number>
+  /**
+   * How many contacts had no version in their own language and received the
+   * template's default instead. Surfaced after a run so a missing translation
+   * is noticed rather than silently absorbed.
+   */
+  fallbackCount: number
 }
+
+/**
+ * What a contact should be sent.
+ *
+ * The sender does not know about templates or languages: it asks this for each
+ * contact and sends what comes back. That keeps language resolution in one
+ * place (TemplateService) while the sender stays responsible only for pacing,
+ * rate limits and safety.
+ */
+export interface ResolvedMessage {
+  message: string
+  /** Language actually sent, for the run summary. */
+  language?: string | null
+  /** True when the contact's own language had no version. */
+  usedFallback?: boolean
+}
+
+export type MessageResolver = (contact: Contact) => ResolvedMessage
 
 export interface ContactValidationResult {
   valid: Contact[]
@@ -63,6 +89,10 @@ class EnhancedBulkMessageServiceClass {
   private currentIndex = 0
   private currentBatch = 0
   private totalDelayUsed = 0
+  /** Messages sent per language during the current run. */
+  private languageCounts: Record<string, number> = {}
+  /** Contacts in the current run that fell back to the default version. */
+  private fallbackCount = 0
   private messagesThisHour = 0
   private messagesThisDay = 0
   private lastMessageTime = 0
@@ -230,7 +260,11 @@ class EnhancedBulkMessageServiceClass {
 
   async sendBulkMessages(
     contacts: Contact[],
-    message: string,
+    /**
+     * A fixed message for every contact, or a resolver called per contact —
+     * which is how a multilingual template sends each company its own language.
+     */
+    message: string | MessageResolver,
     settings: Partial<BulkMessageSettings>,
     onProgress: (progress: BulkMessageProgress) => void,
     onContactUpdate: (contact: Contact) => Promise<void>,
@@ -265,6 +299,8 @@ class EnhancedBulkMessageServiceClass {
     this.currentIndex = 0
     this.currentBatch = 0
     this.totalDelayUsed = 0
+    this.languageCounts = {}
+    this.fallbackCount = 0
 
     const totalBatches = Math.ceil(validation.valid.length / this.settings.batchSize)
 
@@ -298,6 +334,8 @@ class EnhancedBulkMessageServiceClass {
         averageDelayUsed: this.totalDelayUsed / validation.valid.length,
         batchesProcessed: this.currentBatch,
         errors: this.progress.errors,
+        languageCounts: { ...this.languageCounts },
+        fallbackCount: this.fallbackCount,
       }
 
       this.cleanup()
@@ -310,7 +348,7 @@ class EnhancedBulkMessageServiceClass {
 
   private async processContacts(
     contacts: Contact[],
-    message: string,
+    message: string | MessageResolver,
     onProgress: (progress: BulkMessageProgress) => void,
     onContactUpdate: (contact: Contact) => Promise<void>,
   ): Promise<void> {
@@ -386,14 +424,27 @@ class EnhancedBulkMessageServiceClass {
 
   private async sendSingleMessage(
     contact: Contact,
-    message: string,
+    message: string | MessageResolver,
     onContactUpdate: (contact: Contact) => Promise<void>,
   ): Promise<void> {
     // Simulate human behavior
     await this.simulateHumanBehavior()
 
-    // Generate personalized message
-    const personalizedMessage = TemplateService.replaceVariables(message, contact)
+    // A resolver has already done variable substitution for this contact (it
+    // needs the contact to choose a language version in the first place); a
+    // plain string still has to be personalised here.
+    const resolved: ResolvedMessage =
+      typeof message === "function" ? message(contact) : { message: TemplateService.replaceVariables(message, contact) }
+
+    const personalizedMessage = resolved.message
+
+    if (!personalizedMessage.trim()) {
+      throw new Error("No message resolved for this contact")
+    }
+
+    const language = resolved.language ?? "unknown"
+    this.languageCounts[language] = (this.languageCounts[language] ?? 0) + 1
+    if (resolved.usedFallback) this.fallbackCount++
 
     // Validate message length
     if (personalizedMessage.length > 4000) {

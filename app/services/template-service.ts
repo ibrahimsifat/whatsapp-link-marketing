@@ -1,4 +1,6 @@
 import type { Contact, MessageTemplate } from "../types/contact"
+import type { TemplateGroup, ResolvedTemplate } from "../types/template-group"
+import { resolveTemplateForContact } from "../types/template-group"
 
 export class TemplateService {
   /**
@@ -17,6 +19,8 @@ export class TemplateService {
       .replace(/\{companyName\}/g, contact.companyName || "there")
       .replace(/\{companyCategory\}/g, contact.companyCategory || "your industry")
       .replace(/\{website\}/g, contact.website || "")
+      .replace(/\{city\}/g, contact.city || "your city")
+      .replace(/\{language\}/g, contact.language || "")
 
     // Replace custom dynamic variables
     if (contact.dynamicData) {
@@ -29,6 +33,41 @@ export class TemplateService {
     }
 
     return replacedText
+  }
+
+  /**
+   * Renders a template variant into the exact text WhatsApp will receive.
+   *
+   * The image is appended rather than embedded: click-to-chat links carry only
+   * text, so the URL travels in the body and the recipient's WhatsApp client
+   * expands it into a thumbnail. It goes last so the written message is what
+   * the recipient reads first, and is skipped when the content already
+   * contains that URL (an operator who inserted it inline while writing).
+   */
+  static renderVariant(variant: Pick<MessageTemplate, "content" | "imageUrl">, contact: Partial<Contact>): string {
+    const body = this.replaceVariables(variant.content, contact)
+    const imageUrl = variant.imageUrl?.trim()
+
+    if (!imageUrl || body.includes(imageUrl)) return body
+
+    return `${body.trimEnd()}
+
+${imageUrl}`
+  }
+
+  /**
+   * Renders the message a specific contact should receive from a template.
+   *
+   * This is the single place language selection happens for an outgoing
+   * message, so the bulk sender, the preview and the per-contact link all agree
+   * on what a given contact would be sent.
+   */
+  static renderForContact(
+    group: TemplateGroup,
+    contact: Contact,
+  ): ResolvedTemplate & { message: string } {
+    const resolved = resolveTemplateForContact(group, contact)
+    return { ...resolved, message: this.renderVariant(resolved.variant, contact) }
   }
 
   /**
@@ -124,6 +163,8 @@ export class TemplateService {
     const sampleContact: Partial<Contact> = {
       companyName: "Sample Company",
       companyCategory: "Technology",
+      city: "Riyadh",
+      language: "Arabic",
       website: "https://example.com",
       dynamicData: {
         contactPerson: "John Doe",

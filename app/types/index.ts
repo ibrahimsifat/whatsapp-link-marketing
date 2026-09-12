@@ -35,6 +35,12 @@ export interface Contact {
   /** Company website URL (optional) */
   website?: string
 
+  /** City the business is located in (optional) */
+  city?: string
+
+  /** Preferred language for outreach, e.g. "Arabic" / "English" (optional) */
+  language?: string
+
   /** Whether the contact has a website */
   hasWebsite: boolean
 
@@ -116,6 +122,18 @@ export interface MessageTemplate {
 
   /** Specific category when targetAudience is 'category_specific' */
   specificCategory?: string
+
+  /** Shared by every language version of the same template */
+  groupId: string
+
+  /** Canonical language code of this version - see lib/i18n/languages.ts */
+  language: string
+
+  /** Used when a contact's language has no version of its own */
+  isFallback: boolean
+
+  /** Image sent with this language version; appended to the message body */
+  imageUrl?: string
 }
 
 /**

@@ -26,8 +26,9 @@ A professional WhatsApp link generation tool for businesses to create personaliz
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 20+
+- pnpm (or npm / yarn)
+- A Cloudflare account with a **D1** database
 - Modern web browser
 
 ### Setup
@@ -45,14 +46,31 @@ npm install
 yarn install
 \`\`\`
 
-3. Run the development server:
+3. Configure the database and login credentials:
 \`\`\`bash
-npm run dev
-# or
-yarn dev
+cp .env.example .env.local
+pnpm auth:hash "your-password"   # prints AUTH_PASSWORD_HASH and JWT_SECRET
 \`\`\`
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Fill in your Cloudflare account ID, D1 database ID and API token.
+See **[DATABASE.md](./DATABASE.md)** for where to find each value.
+
+4. Create the database tables:
+\`\`\`bash
+pnpm db:migrate
+pnpm db:verify
+\`\`\`
+
+5. Run the development server:
+\`\`\`bash
+pnpm dev
+\`\`\`
+
+6. Open [http://localhost:3000](http://localhost:3000) and sign in.
+
+> **Data storage:** contacts, templates, settings and send history live in
+> Cloudflare D1 — not in the browser. The app is behind a login.
+> Full details, schema and API reference: **[DATABASE.md](./DATABASE.md)**.
 
 ## 📖 Usage
 

@@ -22,8 +22,11 @@ import {
   Building,
   Phone,
   Tag,
+  MapPin,
+  Languages,
 } from "lucide-react"
 import { PhoneService } from "../services/phone-service"
+import { WhatsAppService } from "../services/whatsapp-service"
 import type { Contact } from "../types/contact"
 
 interface GoogleSheetsImportProps {
@@ -169,6 +172,10 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
       (h) => h.includes("category") || h.includes("type") || h.includes("industry"),
     )
     const websiteIndex = headers.findIndex((h) => h.includes("website") || h.includes("url") || h.includes("site"))
+    const cityIndex = headers.findIndex(
+      (h) => h.includes("city") || h.includes("town") || h.includes("location") || h.includes("region"),
+    )
+    const languageIndex = headers.findIndex((h) => h.includes("language") || h.includes("lang") || h.includes("locale"))
 
     if (phoneIndex === -1) {
       throw new Error("No phone number column found. Expected columns: phone, mobile, tel, or number")
@@ -209,6 +216,8 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
       const companyName = companyIndex >= 0 ? row[companyIndex]?.trim() : ""
       const companyCategory = categoryIndex >= 0 ? row[categoryIndex]?.trim() : ""
       let website = websiteIndex >= 0 ? row[websiteIndex]?.trim() : ""
+      const city = cityIndex >= 0 ? row[cityIndex]?.trim() : ""
+      const language = languageIndex >= 0 ? row[languageIndex]?.trim() : ""
 
       // Process website URL
       if (website && !website.startsWith("http")) {
@@ -218,7 +227,14 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
       // Collect dynamic data from other columns
       const dynamicData: Record<string, any> = {}
       headers.forEach((header, index) => {
-        if (index !== phoneIndex && index !== companyIndex && index !== categoryIndex && index !== websiteIndex) {
+        if (
+          index !== phoneIndex &&
+          index !== companyIndex &&
+          index !== categoryIndex &&
+          index !== websiteIndex &&
+          index !== cityIndex &&
+          index !== languageIndex
+        ) {
           const value = row[index]?.trim()
           if (value) {
             const cleanHeader = header.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
@@ -234,8 +250,12 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
         companyName: companyName || "Unknown Company",
         companyCategory: companyCategory || "Uncategorized",
         website: website || "",
+        city: city || "",
+        language: language || "",
         hasWebsite: !!website,
-        whatsappLink: "",
+        // Generated up front with an empty body: the API requires a link on
+        // every contact, and editing the message later regenerates them all.
+        whatsappLink: WhatsAppService.generateWhatsAppLink(normalized, ""),
         status: "pending" as const,
         source: "google_sheets",
         lastUpdated: new Date().toISOString(),
@@ -486,6 +506,14 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
                             <Globe className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                             Website/URL
                           </Badge>
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                            City/Location
+                          </Badge>
+                          <Badge variant="outline" className="justify-start text-[10px] sm:text-xs">
+                            <Languages className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                            Language/Locale
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -566,7 +594,7 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
                   <h4 className="font-medium text-slate-900 mb-2">Pro Tips</h4>
                   <ul className="text-sm text-slate-700 space-y-1">
                     <li>• Add custom columns for personalized messaging (e.g., Contact Person, Location)</li>
-                    <li>• Use consistent phone number formats (Saudi numbers: 05XXXXXXXX or +966XXXXXXXXX)</li>
+                    <li>• Use consistent phone number formats (Saudi numbers: 05XXXXXXXX, 5XXXXXXXX, 966XXXXXXXXX, 9660XXXXXXXXX or +966XXXXXXXXX)</li>
                     <li>• Include website URLs for better business targeting</li>
                     <li>• Use the "Update" button to refresh data from the same sheet</li>
                   </ul>

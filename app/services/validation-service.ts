@@ -8,6 +8,7 @@
 import { VALIDATION_RULES, ERROR_MESSAGES } from "../constants/app-constants"
 import type { ValidationResult, ValidationRule, PhoneValidationResult } from "./types"
 import type { Contact, MessageTemplate } from "../types"
+import { PhoneService } from "./phone-service"
 
 export class ValidationService {
   /**
@@ -38,11 +39,14 @@ export class ValidationService {
       }
     }
 
-    // Check Saudi format
-    if (VALIDATION_RULES.PHONE.SAUDI_PATTERN.test(cleanPhone)) {
+    // Check Saudi format. PhoneService owns the list of accepted shapes
+    // (05X, 5X, 966..., +966..., 00966..., and the 966 + 0 trunk variant) so
+    // that manual entry and spreadsheet import never disagree on validity.
+    const saudiNormalized = PhoneService.normalizePhoneNumber(phone)
+    if (saudiNormalized) {
       return {
         isValid: true,
-        normalized: `+966${cleanPhone.substring(1)}`,
+        normalized: saudiNormalized,
         country: "SA",
         type: "mobile",
       }

@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react"
 import type { Contact, MessageTemplate } from "../types/contact"
-import { DEFAULT_TEMPLATES, APP_CONSTANTS } from "../constants/app-constants"
+import type { TemplateGroup } from "../types/template-group"
+import { APP_CONSTANTS } from "../constants/app-constants"
 
 export interface AppState {
   // Contact management
@@ -15,7 +16,14 @@ export interface AppState {
   fileError: string
   // Templates
   templates: MessageTemplate[]
+  /** The default-language version of the selected template, for previews. */
   selectedTemplate: MessageTemplate | null
+  /**
+   * The selected template with all its language versions. Held alongside
+   * `selectedTemplate` because the sender needs every version to route each
+   * contact to its own language.
+   */
+  selectedTemplateGroup: TemplateGroup | null
   customMessage: string
 
   // Filters
@@ -52,8 +60,10 @@ const initialState: AppState = {
   dragActive: false,
   fileError: "",
   // Templates
-  templates: DEFAULT_TEMPLATES.map((t) => ({ ...t, variables: [...t.variables] })),
+  // Templates are loaded from the database by `useTemplates`, not seeded here.
+  templates: [],
   selectedTemplate: null,
+  selectedTemplateGroup: null,
   customMessage: "",
 
   // Filters

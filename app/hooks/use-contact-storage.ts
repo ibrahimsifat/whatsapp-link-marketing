@@ -1,286 +1,391 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
-import type { Contact, ContactDatabase } from "../types/contact"
+/**
+ * Contact storage hook (Cloudflare D1)
+ *
+ * Replaces the previous localStorage implementation. The public surface is
+ * deliberately unchanged so the components that consume it did not need to be
+ * rewritten, but the semantics are now very different:
+ *
+ *  - the database, not the browser, is the source of truth
+ *  - deduplication is enforced by a unique index rather than by comparing
+ *    against a possibly-stale in-memory snapshot
+ *  - there is no 10MB ceiling, no QuotaExceededError, and no divergence between
+ *    two browsers used by the same operator
+ *
+ * The full filtered contact set is still held in memory, because the bulk
+ * sender genuinely needs every matching contact at once. It is hydrated by
+ * paging through the API rather than by reading one giant JSON blob, and it is
+ * bounded so a runaway list cannot lock up the tab.
+ */
 
-const STORAGE_KEY = "whatsapp_contacts_db"
-const DB_VERSION = "1.0.0"
-const MAX_STORAGE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+
+import type { Contact, ContactDatabase } from "../types/contact"
+import { ApiError, contactsApi, type ContactQuery, type ContactStatsPayload } from "@/lib/api/client"
+
+const DB_VERSION = "2.0.0"
+
+/** Rows fetched per request while hydrating. Matches the API's page cap. */
+const HYDRATE_PAGE_SIZE = 500
+
+/** Hard ceiling on contacts held in memory, to protect the browser tab. */
+const MAX_IN_MEMORY = 20_000
+
+export interface StorageOperationResult {
+  success: boolean
+  message: string
+  stats?: Record<string, number>
+}
+
+const EMPTY_DATABASE: ContactDatabase = {
+  contacts: [],
+  lastUpdated: new Date().toISOString(),
+  version: DB_VERSION,
+  totalContacts: 0,
+  sentCount: 0,
+  pendingCount: 0,
+  notSentCount: 0,
+}
+
+/** Turn any thrown value into a message safe to show the operator. */
+function toMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return error.message
+  if (error instanceof Error) return error.message
+  return fallback
+}
 
 export function useContactStorage() {
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [stats, setStats] = useState<ContactStatsPayload | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [database, setDatabase] = useState<ContactDatabase>({
-    contacts: [],
-    lastUpdated: new Date().toISOString(),
-    version: DB_VERSION,
-    totalContacts: 0,
-    sentCount: 0,
-    pendingCount: 0,
-    notSentCount: 0,
-  })
+  const [isInitialising, setIsInitialising] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<ContactQuery>({})
 
-  // Load contacts from localStorage on mount
-  useEffect(() => {
-    loadContacts()
+  /**
+   * Guards against a slow response from an abandoned request overwriting the
+   * results of a newer one — the classic out-of-order fetch bug when a user
+   * types quickly in a search box.
+   */
+  const requestSeq = useRef(0)
+
+  // --------------------------------------------------------------------------
+  // READS
+  // --------------------------------------------------------------------------
+
+  /** Fetch every contact matching `query`, one page at a time. */
+  const fetchAllContacts = useCallback(async (query: ContactQuery): Promise<Contact[]> => {
+    const collected: Contact[] = []
+    let page = 1
+    let totalPages = 1
+
+    do {
+      const { contacts: pageContacts, meta } = await contactsApi.list({
+        ...query,
+        page,
+        perPage: HYDRATE_PAGE_SIZE,
+      })
+
+      collected.push(...pageContacts)
+      totalPages = meta.totalPages
+      page++
+    } while (page <= totalPages && collected.length < MAX_IN_MEMORY)
+
+    return collected
   }, [])
 
-  const loadContacts = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as ContactDatabase
-        setDatabase(parsed)
+  /** Reload contacts and statistics from the database. */
+  const loadContacts = useCallback(
+    async (query?: ContactQuery): Promise<StorageOperationResult> => {
+      const seq = ++requestSeq.current
+      const effectiveQuery = query ?? filters
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const [loaded, loadedStats] = await Promise.all([fetchAllContacts(effectiveQuery), contactsApi.stats()])
+
+        // A newer request has started; discard this stale result.
+        if (seq !== requestSeq.current) {
+          return { success: true, message: "Superseded by a newer request" }
+        }
+
+        setContacts(loaded)
+        setStats(loadedStats)
+
+        return {
+          success: true,
+          message: `Loaded ${loaded.length} contact${loaded.length === 1 ? "" : "s"}`,
+          stats: { loaded: loaded.length, total: loadedStats.total },
+        }
+      } catch (err) {
+        if (seq !== requestSeq.current) {
+          return { success: false, message: "Superseded by a newer request" }
+        }
+        const message = toMessage(err, "Failed to load contacts")
+        setError(message)
+        return { success: false, message }
+      } finally {
+        if (seq === requestSeq.current) {
+          setIsLoading(false)
+          setIsInitialising(false)
+        }
       }
-    } catch (error) {
-      console.error("Error loading contacts:", error)
+    },
+    [fetchAllContacts, filters],
+  )
+
+  /** Refresh only the aggregate counters; cheaper than a full reload. */
+  const refreshStats = useCallback(async () => {
+    try {
+      setStats(await contactsApi.stats())
+    } catch (err) {
+      console.error("[contacts] Failed to refresh statistics:", err)
     }
   }, [])
 
-  const checkStorageSize = (data: string): boolean => {
-    const sizeInBytes = new Blob([data]).size
-    return sizeInBytes <= MAX_STORAGE_SIZE
-  }
+  // Initial hydration.
+  useEffect(() => {
+    void loadContacts({})
+    // Intentionally runs once: `loadContacts` changes identity with `filters`,
+    // and refetching on every filter change is handled explicitly by `applyFilters`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
+  // --------------------------------------------------------------------------
+  // FILTERS
+  // --------------------------------------------------------------------------
+
+  /** Apply server-side filters and reload. */
+  const applyFilters = useCallback(
+    async (next: ContactQuery) => {
+      setFilters(next)
+      return loadContacts(next)
+    },
+    [loadContacts],
+  )
+
+  // --------------------------------------------------------------------------
+  // WRITES
+  // --------------------------------------------------------------------------
+
+  /**
+   * Persist a set of contacts.
+   *
+   * Named `saveContacts` for continuity with the old API, but it is an upsert:
+   * existing numbers are merged rather than duplicated, and the database
+   * decides what is new.
+   */
   const saveContacts = useCallback(
-    async (contacts: Contact[]) => {
+    async (incoming: Contact[], source = "manual"): Promise<StorageOperationResult> => {
+      if (incoming.length === 0) {
+        return { success: false, message: "There are no contacts to save" }
+      }
+
       setIsLoading(true)
       try {
-        // Filter out duplicates against existing contacts
-        const existingNumbers = new Set(database.contacts.map((c) => c.normalized))
-        const uniqueContacts: Contact[] = []
-        const duplicates: Contact[] = []
+        const result = await contactsApi.import(incoming, source)
+        await loadContacts()
 
-        // Also track duplicates within the new batch
-        const newBatchNumbers = new Set<string>()
-
-        contacts.forEach((contact) => {
-          if (existingNumbers.has(contact.normalized) || newBatchNumbers.has(contact.normalized)) {
-            duplicates.push(contact)
-          } else {
-            uniqueContacts.push(contact)
-            newBatchNumbers.add(contact.normalized)
-          }
-        })
-
-        if (uniqueContacts.length === 0 && contacts.length > 0) {
-          return {
-            success: false,
-            message: `All ${contacts.length} contacts were duplicates. No new contacts saved.`,
-            stats: {
-              total: contacts.length,
-              saved: 0,
-              duplicates: duplicates.length,
-            },
-          }
-        }
-
-        // Combine existing contacts with new unique contacts
-        const allContacts = [...database.contacts, ...uniqueContacts]
-        const stats = calculateStats(allContacts)
-
-        const newDatabase: ContactDatabase = {
-          contacts: allContacts,
-          lastUpdated: new Date().toISOString(),
-          version: DB_VERSION,
-          ...stats,
-        }
-
-        const dataString = JSON.stringify(newDatabase)
-
-        // Check if data exceeds storage limit
-        if (!checkStorageSize(dataString)) {
-          return {
-            success: false,
-            message:
-              "Storage limit exceeded (10MB). Please reduce the number of contacts or export and clear some data.",
-          }
-        }
-
-        localStorage.setItem(STORAGE_KEY, dataString)
-        setDatabase(newDatabase)
-
-        const message =
-          duplicates.length > 0
-            ? `Saved ${uniqueContacts.length} new contacts. ${duplicates.length} duplicates were skipped.`
-            : `Saved ${uniqueContacts.length} contacts successfully`
+        const parts: string[] = []
+        if (result.inserted > 0) parts.push(`${result.inserted} new`)
+        if (result.updated > 0) parts.push(`${result.updated} updated`)
+        if (result.duplicatesInPayload > 0) parts.push(`${result.duplicatesInPayload} duplicates skipped`)
 
         return {
           success: true,
-          message,
+          message: parts.length > 0 ? `Saved: ${parts.join(", ")}` : "No changes were needed",
           stats: {
-            total: contacts.length,
-            saved: uniqueContacts.length,
-            duplicates: duplicates.length,
+            total: result.received,
+            saved: result.inserted,
+            updated: result.updated,
+            duplicates: result.duplicatesInPayload,
           },
         }
-      } catch (error) {
-        console.error("Error saving contacts:", error)
-        if (error instanceof Error && error.name === "QuotaExceededError") {
-          return {
-            success: false,
-            message: "Storage quota exceeded. Please export and clear some contacts to free up space.",
-          }
-        }
-        return { success: false, message: "Failed to save contacts" }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to save contacts") }
       } finally {
         setIsLoading(false)
       }
     },
-    [database.contacts],
+    [loadContacts],
   )
 
+  /** Import from a named source, recording an import batch for provenance. */
   const mergeContacts = useCallback(
-    async (newContacts: Contact[], source: string) => {
+    async (incoming: Contact[], source: string): Promise<StorageOperationResult> => {
+      if (incoming.length === 0) {
+        return { success: false, message: "There are no contacts to merge" }
+      }
+
       setIsLoading(true)
       try {
-        const existingContacts = database.contacts
-        const mergedContacts: Contact[] = []
-        const duplicates: Contact[] = []
-        const newAdditions: Contact[] = []
-
-        // Create a map of existing contacts by normalized phone number
-        const existingMap = new Map(existingContacts.map((contact) => [contact.normalized, contact]))
-
-        // Track numbers within the new batch to avoid internal duplicates
-        const processedNumbers = new Set<string>()
-
-        // Process new contacts
-        for (const newContact of newContacts) {
-          // Skip if we've already processed this number in the current batch
-          if (processedNumbers.has(newContact.normalized)) {
-            duplicates.push(newContact)
-            continue
-          }
-
-          processedNumbers.add(newContact.normalized)
-          const existing = existingMap.get(newContact.normalized)
-
-          if (existing) {
-            // Update existing contact with new information
-            const updatedContact: Contact = {
-              ...existing,
-              // Update with new data if available
-              companyName: newContact.companyName || existing.companyName,
-              companyCategory: newContact.companyCategory || existing.companyCategory,
-              website: newContact.website || existing.website,
-              hasWebsite: newContact.hasWebsite || existing.hasWebsite,
-              lastUpdated: new Date().toISOString(),
-              source: `${existing.source}, ${source}`, // Track multiple sources
-            }
-            mergedContacts.push(updatedContact)
-            duplicates.push(newContact)
-          } else {
-            // Add new contact
-            const contactToAdd: Contact = {
-              ...newContact,
-              status: "pending", // New contacts are pending by default
-              lastUpdated: new Date().toISOString(),
-              source,
-            }
-            mergedContacts.push(contactToAdd)
-            newAdditions.push(contactToAdd)
-          }
-        }
-
-        // Add remaining existing contacts that weren't updated
-        for (const existing of existingContacts) {
-          if (!processedNumbers.has(existing.normalized)) {
-            mergedContacts.push(existing)
-          }
-        }
-
-        const result = await saveContacts(mergedContacts)
-
-        if (!result.success) {
-          return result
-        }
+        const result = await contactsApi.import(incoming, source, source)
+        await loadContacts()
 
         return {
           success: true,
-          message: `Merged successfully: ${newAdditions.length} new, ${duplicates.length} duplicates handled`,
+          message: `Merged successfully: ${result.inserted} new, ${result.updated} updated, ${result.duplicatesInPayload} duplicates handled`,
           stats: {
-            newContacts: newAdditions.length,
-            duplicates: duplicates.length,
-            total: mergedContacts.length,
+            newContacts: result.inserted,
+            updated: result.updated,
+            duplicates: result.duplicatesInPayload,
+            total: result.received,
           },
         }
-      } catch (error) {
-        console.error("Error merging contacts:", error)
-        return { success: false, message: "Failed to merge contacts" }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to merge contacts") }
       } finally {
         setIsLoading(false)
       }
     },
-    [database.contacts, saveContacts],
+    [loadContacts],
   )
 
+  /**
+   * Change one contact's status.
+   *
+   * Updates local state from the server's response rather than reloading the
+   * whole list: marking contacts sent happens once per message during a bulk
+   * run, and a full refetch each time would be unusable.
+   */
   const updateContactStatus = useCallback(
-    async (contactId: string, status: Contact["status"], notes?: string) => {
+    async (contactId: string, status: Contact["status"], notes?: string): Promise<StorageOperationResult> => {
       try {
-        const updatedContacts = database.contacts.map((contact) => {
-          if (contact.id === contactId) {
-            return {
-              ...contact,
-              status,
-              sentAt: status === "sent" ? new Date().toISOString() : contact.sentAt,
-              lastUpdated: new Date().toISOString(),
-              notes: notes || contact.notes,
-            }
-          }
-          return contact
-        })
+        const updated = await contactsApi.updateStatus(contactId, status, notes)
 
-        const stats = calculateStats(updatedContacts)
-        const newDatabase: ContactDatabase = {
-          contacts: updatedContacts,
-          lastUpdated: new Date().toISOString(),
-          version: DB_VERSION,
-          ...stats,
-        }
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newDatabase))
-        setDatabase(newDatabase)
+        setContacts((prev) => prev.map((contact) => (contact.id === contactId ? updated : contact)))
+        void refreshStats()
 
         return { success: true, message: "Contact status updated successfully" }
-      } catch (error) {
-        console.error("Error updating contact status:", error)
-        return { success: false, message: "Failed to update contact status" }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to update contact status") }
       }
     },
-    [database.contacts],
+    [refreshStats],
+  )
+
+  /** Update arbitrary fields on a contact. */
+  const updateContact = useCallback(
+    async (contactId: string, patch: Partial<Contact>): Promise<StorageOperationResult> => {
+      try {
+        const updated = await contactsApi.update(contactId, patch)
+
+        setContacts((prev) => prev.map((contact) => (contact.id === contactId ? updated : contact)))
+        void refreshStats()
+
+        return { success: true, message: "Contact updated successfully" }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to update contact") }
+      }
+    },
+    [refreshStats],
   )
 
   const deleteContact = useCallback(
-    async (contactId: string) => {
+    async (contactId: string): Promise<StorageOperationResult> => {
       try {
-        const updatedContacts = database.contacts.filter((contact) => contact.id !== contactId)
-        const stats = calculateStats(updatedContacts)
-        const newDatabase: ContactDatabase = {
-          contacts: updatedContacts,
-          lastUpdated: new Date().toISOString(),
-          version: DB_VERSION,
-          ...stats,
-        }
+        await contactsApi.remove(contactId)
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newDatabase))
-        setDatabase(newDatabase)
+        setContacts((prev) => prev.filter((contact) => contact.id !== contactId))
+        void refreshStats()
 
         return { success: true, message: "Contact deleted successfully" }
-      } catch (error) {
-        console.error("Error deleting contact:", error)
-        return { success: false, message: "Failed to delete contact" }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to delete contact") }
       }
     },
-    [database.contacts],
+    [refreshStats],
   )
 
-  const exportContacts = useCallback(() => {
-    try {
-      const dataStr = JSON.stringify(database, null, 2)
-      const dataBlob = new Blob([dataStr], { type: "application/json" })
-      const url = URL.createObjectURL(dataBlob)
+  /** Delete many contacts in a single request. */
+  const bulkDeleteContacts = useCallback(
+    async (ids: string[]): Promise<StorageOperationResult> => {
+      if (ids.length === 0) return { success: false, message: "No contacts selected" }
 
+      setIsLoading(true)
+      try {
+        const { deleted } = await contactsApi.bulkRemove(ids)
+        const removed = new Set(ids)
+
+        setContacts((prev) => prev.filter((contact) => !removed.has(contact.id)))
+        void refreshStats()
+
+        return {
+          success: true,
+          message: `Deleted ${deleted} contact${deleted === 1 ? "" : "s"}`,
+          stats: { deleted },
+        }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to delete contacts") }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [refreshStats],
+  )
+
+  /** Set the same status on many contacts in a single request. */
+  const bulkUpdateStatus = useCallback(
+    async (ids: string[], status: Contact["status"], notes?: string): Promise<StorageOperationResult> => {
+      if (ids.length === 0) return { success: false, message: "No contacts selected" }
+
+      setIsLoading(true)
+      try {
+        const { updated } = await contactsApi.bulkUpdateStatus(ids, status, notes)
+        const now = new Date().toISOString()
+        const target = new Set(ids)
+
+        setContacts((prev) =>
+          prev.map((contact) =>
+            target.has(contact.id)
+              ? {
+                  ...contact,
+                  status,
+                  notes: notes ?? contact.notes,
+                  lastUpdated: now,
+                  sentAt: status === "sent" ? now : undefined,
+                }
+              : contact,
+          ),
+        )
+        void refreshStats()
+
+        return {
+          success: true,
+          message: `Updated ${updated} contact${updated === 1 ? "" : "s"}`,
+          stats: { updated },
+        }
+      } catch (err) {
+        return { success: false, message: toMessage(err, "Failed to update contacts") }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [refreshStats],
+  )
+
+  /**
+   * Download every contact as JSON.
+   *
+   * The file is generated by the server from the live database, so the export
+   * is complete even when the browser is only holding a subset.
+   */
+  const exportContacts = useCallback(async (): Promise<StorageOperationResult> => {
+    try {
+      const response = await fetch(contactsApi.exportUrl("json", filters), {
+        credentials: "same-origin",
+        cache: "no-store",
+      })
+
+      if (!response.ok) throw new Error(`Export failed with status ${response.status}`)
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
+
       link.href = url
       link.download = `whatsapp_contacts_${new Date().toISOString().split("T")[0]}.json`
       document.body.appendChild(link)
@@ -289,55 +394,80 @@ export function useContactStorage() {
       URL.revokeObjectURL(url)
 
       return { success: true, message: "Contacts exported successfully" }
-    } catch (error) {
-      console.error("Error exporting contacts:", error)
-      return { success: false, message: "Failed to export contacts" }
+    } catch (err) {
+      return { success: false, message: toMessage(err, "Failed to export contacts") }
     }
-  }, [database])
+  }, [filters])
 
-  const clearAllContacts = useCallback(async () => {
+  const clearAllContacts = useCallback(async (): Promise<StorageOperationResult> => {
     setIsLoading(true)
     try {
-      const emptyDatabase: ContactDatabase = {
-        contacts: [],
-        lastUpdated: new Date().toISOString(),
-        version: DB_VERSION,
-        totalContacts: 0,
-        sentCount: 0,
-        pendingCount: 0,
-        notSentCount: 0,
+      const { deleted } = await contactsApi.clearAll()
+
+      setContacts([])
+      await refreshStats()
+
+      return {
+        success: true,
+        message: `Cleared ${deleted} contact${deleted === 1 ? "" : "s"}`,
+        stats: { deleted },
       }
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyDatabase))
-      setDatabase(emptyDatabase)
-
-      return { success: true, message: "All contacts cleared successfully" }
-    } catch (error) {
-      console.error("Error clearing contacts:", error)
-      return { success: false, message: "Failed to clear contacts" }
+    } catch (err) {
+      return { success: false, message: toMessage(err, "Failed to clear contacts") }
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [refreshStats])
+
+  // --------------------------------------------------------------------------
+  // DERIVED
+  // --------------------------------------------------------------------------
+
+  /**
+   * The legacy `ContactDatabase` shape, rebuilt from server data.
+   *
+   * Counts come from SQL aggregates over the whole table, not from the array in
+   * memory, so they stay correct even when a filter is applied.
+   */
+  const database = useMemo<ContactDatabase>(() => {
+    if (!stats) return { ...EMPTY_DATABASE, contacts }
+
+    return {
+      contacts,
+      lastUpdated: new Date().toISOString(),
+      version: DB_VERSION,
+      totalContacts: stats.total,
+      sentCount: stats.sent,
+      pendingCount: stats.pending,
+      notSentCount: stats.notSent,
+    }
+  }, [contacts, stats])
 
   return {
+    // State
     database,
+    contacts,
+    stats,
+    categories: stats?.categories ?? [],
+    filters,
     isLoading,
+    isInitialising,
+    error,
+
+    // Reads
+    loadContacts,
+    refreshStats,
+    applyFilters,
+
+    // Writes
     saveContacts,
     mergeContacts,
+    updateContact,
     updateContactStatus,
     deleteContact,
+    bulkDeleteContacts,
+    bulkUpdateStatus,
     exportContacts,
     clearAllContacts,
-    loadContacts,
-  }
-}
-
-function calculateStats(contacts: Contact[]) {
-  return {
-    totalContacts: contacts.length,
-    sentCount: contacts.filter((c) => c.status === "sent").length,
-    pendingCount: contacts.filter((c) => c.status === "pending").length,
-    notSentCount: contacts.filter((c) => c.status === "not_sent").length,
   }
 }

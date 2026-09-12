@@ -29,7 +29,7 @@ export function MessageEditorSection({
       title="Custom Message Editor"
       description={
         isExpanded
-          ? `Create personalized messages with variables: {companyName}, {companyCategory}, {website}`
+          ? `Create personalized messages with variables: {companyName}, {companyCategory}, {website}, {city}, {language}`
           : `Message: "${customMessage.slice(0, 50)}${customMessage.length > 50 ? "..." : ""}" • Click to expand editor`
       }
       isExpanded={isExpanded}
@@ -39,7 +39,7 @@ export function MessageEditorSection({
         <div className="text-slate-600 text-sm">
           {availableCustomVariables.length > 0 && (
             <span>
-              Available variables: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, and your custom variables:{" "}
+              Available variables: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, {"{city}"}, {"{language}"}, and your custom variables:{" "}
               {availableCustomVariables.map((v) => `{${v}}`).join(", ")}
             </span>
           )}
@@ -47,7 +47,7 @@ export function MessageEditorSection({
         <RichTextEditor
           value={customMessage}
           onChange={onCustomMessageChange}
-          placeholder="Type your message here... Use {companyName}, {companyCategory}, {website} for personalization"
+          placeholder="Type your message here... Use {companyName}, {companyCategory}, {website}, {city}, {language} for personalization"
         />
         {contactsCount > 0 && (
           <button

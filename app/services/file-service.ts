@@ -196,12 +196,16 @@ export class FileService {
     companyNameCol: number
     companyCategoryCol: number
     websiteCol: number
+    cityCol: number
+    languageCol: number
     dynamicDataCols: { name: string; index: number }[]
   } {
     const phoneColumns: number[] = []
     let companyNameCol = -1
     let companyCategoryCol = -1
     let websiteCol = -1
+    let cityCol = -1
+    let languageCol = -1
     const dynamicDataCols: { name: string; index: number }[] = []
 
     headerRow.forEach((header, index) => {
@@ -215,6 +219,15 @@ export class FileService {
         companyCategoryCol = index
       } else if (headerStr.includes("website") || headerStr.includes("url") || headerStr.includes("site")) {
         websiteCol = index
+      } else if (
+        headerStr.includes("city") ||
+        headerStr.includes("town") ||
+        headerStr.includes("location") ||
+        headerStr.includes("region")
+      ) {
+        cityCol = index
+      } else if (headerStr.includes("language") || headerStr.includes("lang") || headerStr.includes("locale")) {
+        languageCol = index
       } else if (headerStr.trim()) {
         dynamicDataCols.push({ name: String(header), index })
       }
@@ -225,6 +238,8 @@ export class FileService {
       companyNameCol,
       companyCategoryCol,
       websiteCol,
+      cityCol,
+      languageCol,
       dynamicDataCols,
     }
   }
@@ -242,6 +257,8 @@ export class FileService {
     let companyName = ""
     let companyCategory = ""
     let website = ""
+    let city = ""
+    let language = ""
     const dynamicData: Record<string, string | number | boolean | null | undefined> = {}
 
     const isBlankRow = row.every((cell) => String(cell ?? "").trim() === "")
@@ -277,6 +294,12 @@ export class FileService {
     if (columnMapping.websiteCol >= 0) {
       website = this.cleanWebsiteUrl(String(row[columnMapping.websiteCol] || ""))
     }
+    if (columnMapping.cityCol >= 0) {
+      city = String(row[columnMapping.cityCol] || "").trim()
+    }
+    if (columnMapping.languageCol >= 0) {
+      language = String(row[columnMapping.languageCol] || "").trim()
+    }
 
     // Extract dynamic data
     columnMapping.dynamicDataCols.forEach((col) => {
@@ -300,6 +323,8 @@ export class FileService {
         companyName: companyName || undefined,
         companyCategory: companyCategory || undefined,
         website: website || undefined,
+        city: city || undefined,
+        language: language || undefined,
         hasWebsite,
         status: "pending",
         lastUpdated: new Date().toISOString(),
@@ -349,13 +374,26 @@ export class FileService {
    * Serializes contacts to a downloadable file. Currently only CSV is supported.
    */
   static exportContacts(contacts: Contact[], format: "csv" = "csv"): string {
-    const headers = ["Company Name", "Phone Number", "Category", "Website", "Status", "Notes", "Source", "Last Updated"]
+    const headers = [
+      "Company Name",
+      "Phone Number",
+      "Category",
+      "Website",
+      "City",
+      "Language",
+      "Status",
+      "Notes",
+      "Source",
+      "Last Updated",
+    ]
     const rows = contacts.map((contact) =>
       [
         contact.companyName || "",
         contact.original,
         contact.companyCategory || "",
         contact.website || "",
+        contact.city || "",
+        contact.language || "",
         contact.status,
         contact.notes || "",
         contact.source,

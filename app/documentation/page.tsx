@@ -31,6 +31,8 @@ import {
   MessageCircle,
   Key,
   Phone,
+  MapPin,
+  Languages,
 } from "lucide-react"
 
 export default function Documentation() {
@@ -277,6 +279,12 @@ export default function Documentation() {
                             <li>
                               • <strong>Website</strong> (for smart categorization)
                             </li>
+                            <li>
+                              • <strong>City</strong> (for geographic targeting)
+                            </li>
+                            <li>
+                              • <strong>Language</strong> (to pick the right message template)
+                            </li>
                           </ul>
                         </CardContent>
                       </Card>
@@ -286,7 +294,7 @@ export default function Documentation() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Column Header Examples</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <div className="grid md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <h4 className="font-semibold mb-2">Phone Number:</h4>
                           <ul className="space-y-1 text-slate-600">
@@ -323,6 +331,24 @@ export default function Documentation() {
                             <li>• Web Address</li>
                           </ul>
                         </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">City:</h4>
+                          <ul className="space-y-1 text-slate-600">
+                            <li>• City</li>
+                            <li>• Town</li>
+                            <li>• Location</li>
+                            <li>• Region</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">Language:</h4>
+                          <ul className="space-y-1 text-slate-600">
+                            <li>• Language</li>
+                            <li>• Lang</li>
+                            <li>• Locale</li>
+                            <li>• Preferred Language</li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -338,6 +364,8 @@ export default function Documentation() {
                             <li>• 05 58 84 55 03</li>
                             <li>• +966558845503</li>
                             <li>• 966558845503</li>
+                            <li>• 9660558845503</li>
+                            <li>• 00966558845503</li>
                             <li>• 5 5884 5503</li>
                           </ul>
                         </CardContent>
@@ -601,6 +629,20 @@ export default function Documentation() {
                           <p className="text-sm text-green-600">Company website URL</p>
                         </CardContent>
                       </Card>
+                      <Card className="border-sky-200 bg-sky-50">
+                        <CardContent className="p-4 text-center">
+                          <MapPin className="h-8 w-8 text-sky-600 mx-auto mb-2" />
+                          <h4 className="font-semibold text-sky-800">{"{city}"}</h4>
+                          <p className="text-sm text-sky-600">City the business is located in</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-violet-200 bg-violet-50">
+                        <CardContent className="p-4 text-center">
+                          <Languages className="h-8 w-8 text-violet-600 mx-auto mb-2" />
+                          <h4 className="font-semibold text-violet-800">{"{language}"}</h4>
+                          <p className="text-sm text-violet-600">Preferred outreach language</p>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
 
@@ -632,7 +674,7 @@ export default function Documentation() {
                         <div>
                           <h4 className="font-medium">Use Variables</h4>
                           <p className="text-sm text-slate-600">
-                            Insert {"{companyName}"}, {"{companyCategory}"}, {"{website}"} for personalization
+                            Insert {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, {"{city}"}, {"{language}"} for personalization
                           </p>
                         </div>
                       </div>
@@ -1230,7 +1272,7 @@ export default function Documentation() {
                             <strong>Solution:</strong> Check your phone number format and column headers
                           </p>
                           <ul className="text-xs text-amber-600 space-y-1">
-                            <li>• Ensure phone numbers start with 05, 5, +966, or 966</li>
+                            <li>• Ensure phone numbers start with 05, 5, +966, 966, 9660 or 00966</li>
                             <li>• Use column headers like "Phone", "Mobile", "Number"</li>
                             <li>• Format cells as text, not numbers</li>
                           </ul>
@@ -1295,7 +1337,7 @@ export default function Documentation() {
                           </p>
                           <ul className="text-xs text-slate-600 space-y-1">
                             <li>
-                              • Use exact syntax: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}
+                              • Use exact syntax: {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, {"{city}"}, {"{language}"}
                             </li>
                             <li>• Ensure Excel file contains the required columns</li>
                             <li>• Variables with no data will use fallback values</li>
@@ -1315,7 +1357,7 @@ export default function Documentation() {
                             <strong>Solution:</strong> Ensure the phone number is a valid Saudi format.
                           </p>
                           <ul className="text-xs text-red-600 space-y-1">
-                            <li>• Must start with 05, 5, +9665, or 9665.</li>
+                            <li>• Must start with 05, 5, +9665, 9665, 96605 or 009665.</li>
                             <li>• Must be 9 digits after the prefix (e.g., 05XXXXXXXX).</li>
                           </ul>
                         </CardContent>

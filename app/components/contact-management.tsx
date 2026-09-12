@@ -46,7 +46,7 @@ interface ContactManagementProps {
     notes?: string,
   ) => Promise<{ success: boolean; message?: string }>
   onDeleteContact: (contactId: string) => Promise<{ success: boolean; message: string }>
-  onExportContacts: () => { success: boolean; message: string }
+  onExportContacts: () => Promise<{ success: boolean; message: string }>
   onClearAllContacts: () => Promise<{ success: boolean; message: string }>
   currentContacts: Contact[]
   onUpdateCurrentContacts: (contacts: Contact[]) => void
@@ -236,7 +236,14 @@ export function ContactManagement({
           </Button>
 
           <Button
-            onClick={onExportContacts}
+            onClick={async () => {
+              const result = await onExportContacts()
+              if (result.success) {
+                ToastUtils.success(result.message)
+              } else {
+                ToastUtils.error(result.message)
+              }
+            }}
             disabled={isLoading || database.totalContacts === 0}
             variant="outline"
             className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-transparent w-full sm:w-auto"

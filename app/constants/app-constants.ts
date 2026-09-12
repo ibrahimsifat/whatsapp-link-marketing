@@ -70,8 +70,13 @@ export const WHATSAPP_CONSTANTS = {
 export const VALIDATION_RULES = {
   /** Phone number validation patterns */
   PHONE: {
-    /** Saudi phone number pattern */
-    SAUDI_PATTERN: /^(05|5)[0-9]{8}$/,
+    /**
+     * Saudi phone number pattern, digits only.
+     *
+     * Covers 5XXXXXXXX, 05XXXXXXXX, 9665XXXXXXXX, 96605XXXXXXXX and the
+     * 00-prefixed international spellings of each.
+     */
+    SAUDI_PATTERN: /^(00)?(966)?0?5[0-9]{8}$/,
 
     /** International format pattern */
     INTERNATIONAL_PATTERN: /^\+[1-9]\d{1,14}$/,

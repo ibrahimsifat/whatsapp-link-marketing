@@ -36,7 +36,7 @@ export function InstructionsSection() {
               <div>
                 <p className="font-semibold text-slate-800 mb-1">Template Variables:</p>
                 <p className="text-sm text-slate-600">
-                  {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, and your custom column headers like
+                  {"{companyName}"}, {"{companyCategory}"}, {"{website}"}, {"{city}"}, {"{language}"}, and your custom column headers like
                   {"{contactPerson}"}
                 </p>
               </div>

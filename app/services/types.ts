@@ -108,6 +108,8 @@ export interface ColumnMapping {
   companyNameCol: number
   companyCategoryCol: number
   websiteCol: number
+  cityCol: number
+  languageCol: number
   dynamicDataCols: Array<{ name: string; index: number }>
 }
 
