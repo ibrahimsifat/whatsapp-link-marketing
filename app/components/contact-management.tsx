@@ -31,6 +31,7 @@ import {
   Database,
   TrendingUp,
   AlertTriangle,
+  FileSpreadsheet,
 } from "lucide-react"
 import type { Contact, ContactDatabase } from "../types/contact"
 import { ToastUtils } from "../utils/toast-utils"
@@ -47,6 +48,8 @@ interface ContactManagementProps {
   ) => Promise<{ success: boolean; message?: string }>
   onDeleteContact: (contactId: string) => Promise<{ success: boolean; message: string }>
   onExportContacts: () => Promise<{ success: boolean; message: string }>
+  /** Export every lead as .xlsx, ignoring the on-screen filters. */
+  onExportAllToExcel: () => Promise<{ success: boolean; message: string }>
   onClearAllContacts: () => Promise<{ success: boolean; message: string }>
   currentContacts: Contact[]
   onUpdateCurrentContacts: (contacts: Contact[]) => void
@@ -60,11 +63,15 @@ export function ContactManagement({
   onUpdateContactStatus,
   onDeleteContact,
   onExportContacts,
+  onExportAllToExcel,
   onClearAllContacts,
   currentContacts,
   onUpdateCurrentContacts,
 }: ContactManagementProps) {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  // Building a workbook for thousands of rows takes a moment; the flag keeps
+  // the button from being pressed twice while it runs.
+  const [isExportingExcel, setIsExportingExcel] = useState(false)
   const [notes, setNotes] = useState("")
   const [showMergeDialog, setShowMergeDialog] = useState(false)
   const [mergeStats, setMergeStats] = useState<any>(null)
@@ -251,6 +258,30 @@ export function ContactManagement({
             <Download className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Export Database</span>
             <span className="sm:hidden">Export</span>
+          </Button>
+
+          <Button
+            onClick={async () => {
+              setIsExportingExcel(true)
+              try {
+                const result = await onExportAllToExcel()
+                if (result.success) {
+                  ToastUtils.success(result.message)
+                } else {
+                  ToastUtils.error(result.message)
+                }
+              } finally {
+                setIsExportingExcel(false)
+              }
+            }}
+            disabled={isLoading || isExportingExcel || database.totalContacts === 0}
+            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">
+              {isExportingExcel ? "Preparing..." : `Export All to Excel (${database.totalContacts})`}
+            </span>
+            <span className="sm:hidden">{isExportingExcel ? "..." : "Export All"}</span>
           </Button>
 
           <AlertDialog>

@@ -45,6 +45,7 @@ import {
   Languages,
 } from "lucide-react"
 import type { Contact } from "../types/contact"
+import { WhatsAppService } from "../services/whatsapp-service"
 
 interface ContactCardProps {
   contact: Contact
@@ -80,8 +81,9 @@ export function ContactCard({
 
       onUpdate(updatedContact)
 
-      // Open WhatsApp link
-      window.open(contact.whatsappLink, "_blank")
+      // The stored link was built on whatever device imported the contact, so
+      // it is rewritten here for the device actually doing the tapping.
+      WhatsAppService.openChat(WhatsAppService.retargetLink(contact.whatsappLink))
 
       onShowToast("WhatsApp chat opened and status updated to sent", "success")
     } catch (error) {
@@ -92,7 +94,9 @@ export function ContactCard({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(contact.whatsappLink)
+      // Copied links get the universal wa.me form: whoever it is pasted to may
+      // be on a different device than the person copying it.
+      await navigator.clipboard.writeText(WhatsAppService.retargetLink(contact.whatsappLink, "wa_me"))
       onShowToast("WhatsApp link copied to clipboard", "success")
     } catch (error) {
       console.error("Failed to copy link:", error)

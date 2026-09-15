@@ -39,6 +39,7 @@ interface UploadDataSectionProps {
   onUpdateContactStatus: (id: string, status: Contact["status"], notes?: string) => Promise<any>
   onDeleteContact: (id: string) => Promise<any>
   onExportContacts: () => Promise<{ success: boolean; message: string }>
+  onExportAllToExcel: () => Promise<{ success: boolean; message: string }>
   onClearAllContacts: () => Promise<any>
   currentContacts: Contact[]
   onUpdateCurrentContacts: (contacts: Contact[]) => void
@@ -69,6 +70,7 @@ export function UploadDataSection({
   onUpdateContactStatus,
   onDeleteContact,
   onExportContacts,
+  onExportAllToExcel,
   onClearAllContacts,
   currentContacts,
   onUpdateCurrentContacts,
@@ -157,6 +159,7 @@ export function UploadDataSection({
                 onUpdateContactStatus={onUpdateContactStatus}
                 onDeleteContact={onDeleteContact}
                 onExportContacts={onExportContacts}
+                onExportAllToExcel={onExportAllToExcel}
                 onClearAllContacts={onClearAllContacts}
                 currentContacts={currentContacts}
                 onUpdateCurrentContacts={onUpdateCurrentContacts}

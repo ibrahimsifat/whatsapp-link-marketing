@@ -76,6 +76,7 @@ export default function WhatsAppLinkGenerator() {
     bulkDeleteContacts,
     bulkUpdateStatus,
     exportContacts,
+    exportAllToExcel,
     clearAllContacts,
     loadContacts,
   } = useContactStorage()
@@ -295,6 +296,7 @@ export default function WhatsAppLinkGenerator() {
           onUpdateContactStatus={updateContactStatus}
           onDeleteContact={deleteContact}
           onExportContacts={exportContacts}
+          onExportAllToExcel={exportAllToExcel}
           onClearAllContacts={clearAllContacts}
           currentContacts={contacts}
           onUpdateCurrentContacts={() => undefined}

@@ -451,15 +451,13 @@ class EnhancedBulkMessageServiceClass {
       throw new Error("Message too long (max 4000 characters)")
     }
 
-    // Generate WhatsApp link
+    // Generate WhatsApp link for whichever surface this device is set to open:
+    // the phone's WhatsApp app on mobile, WhatsApp Web on a desktop.
     const whatsappLink = WhatsAppService.generateWhatsAppLink(contact.normalized, personalizedMessage)
 
-    // Open WhatsApp link with safety checks
-    const newWindow = window.open(whatsappLink, "_blank", "noopener,noreferrer,width=800,height=600")
-
-    if (!newWindow) {
-      throw new Error("Pop-up blocked. Please allow pop-ups for this site.")
-    }
+    // Throws if a browser popup was blocked; a handoff to the phone app cannot
+    // be blocked that way and is opened without the check.
+    WhatsAppService.openChat(whatsappLink)
 
     // Update contact status
     const updatedContact = { ...contact, status: "sent" as const, lastSent: new Date().toISOString() }

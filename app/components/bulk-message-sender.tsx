@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,6 +38,11 @@ import { isLanguageRoutingActive, summariseLanguageCoverage } from "../types/tem
 import { TemplateService } from "../services/template-service"
 import { languageLabel } from "@/lib/i18n/languages"
 import {
+  WhatsAppService,
+  LINK_TARGET_OPTIONS,
+  type WhatsAppLinkTarget,
+} from "../services/whatsapp-service"
+import {
   EnhancedBulkMessageService,
   type BulkMessageProgress,
   type BulkMessageSettings,
@@ -73,6 +78,14 @@ export function BulkMessageSender({
   const [showSettings, setShowSettings] = useState(false)
   const [progress, setProgress] = useState<BulkMessageProgress | null>(null)
   const [settings, setSettings] = useState<BulkMessageSettings>(EnhancedBulkMessageService.getSettings())
+  // The preference lives in localStorage, which is outside React. Subscribing
+  // to it keeps the select in step without a state-setting effect, and yields
+  // "auto" during server rendering where there is no device to detect.
+  const linkTarget = useSyncExternalStore(
+    WhatsAppService.subscribeLinkTarget,
+    WhatsAppService.getLinkTarget,
+    WhatsAppService.getServerLinkTarget,
+  )
 
   const targetContacts = selectedContacts.length > 0 ? selectedContacts : contacts.filter((contact) => contact.status !== "sent")
   const validation = EnhancedBulkMessageService.validateContacts(targetContacts)
@@ -408,6 +421,28 @@ export function BulkMessageSender({
                     value={settings.maxMessagesPerDay}
                     onChange={(value) => updateSettings({ maxMessagesPerDay: value })}
                   />
+                </div>
+
+                <div className="space-y-1.5 rounded-lg border border-slate-200 bg-white p-3">
+                  <Label htmlFor="link-target" className="text-sm font-medium">
+                    Open chats in
+                  </Label>
+                  <select
+                    id="link-target"
+                    value={linkTarget}
+                    onChange={(event) => WhatsAppService.setLinkTarget(event.target.value as WhatsAppLinkTarget)}
+                    className="h-9 w-full rounded-md border bg-white px-3 text-sm"
+                  >
+                    {LINK_TARGET_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} - {option.hint}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500">
+                    Saved for this device only, so your phone can open the WhatsApp app while your desktop keeps using
+                    WhatsApp Web.
+                  </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
