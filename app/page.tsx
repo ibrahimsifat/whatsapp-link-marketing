@@ -9,7 +9,6 @@ import type { MessageTemplate } from "./types/contact"
 import { BackToTop } from "./components/back-to-top"
 import { AppHeader } from "./components/app-header"
 import { StatisticsSection } from "./components/statistics-section"
-import { BulkMessageSender } from "./components/bulk-message-sender"
 import { ManualEntrySection } from "./components/manual-entry-section"
 
 // Section Components
@@ -339,31 +338,6 @@ export default function WhatsAppLinkGenerator() {
         )}
 
         {contacts.length > 0 && (
-          <div className="flex justify-center w-full">
-            <BulkMessageSender
-              contacts={contacts}
-              selectedContacts={selectedContacts}
-              templates={templates}
-              selectedTemplate={state.selectedTemplate}
-              selectedGroup={state.selectedTemplateGroup}
-              customMessage={customMessage}
-              onContactStatusUpdate={updateContactStatus}
-              onShowToast={(message, type) => {
-                if (type === "error") {
-                  ToastUtils.error(message)
-                } else if (type === "warning") {
-                  ToastUtils.warning(message)
-                } else if (type === "info") {
-                  ToastUtils.info(message)
-                } else {
-                  ToastUtils.success(message)
-                }
-              }}
-            />
-          </div>
-        )}
-
-        {contacts.length > 0 && (
           <StatisticsSection
             filteredContacts={filteredContacts}
             paginatedContacts={paginatedContacts}
@@ -377,7 +351,12 @@ export default function WhatsAppLinkGenerator() {
             onBulkExport={() => contactOps.handleBulkExport(selectedContacts)}
             onBulkDelete={handleBulkDelete}
             onContactStatusUpdate={updateContactStatus}
-            onShowToast={ToastUtils.success}
+            onShowToast={(message, type) => {
+              if (type === "error") ToastUtils.error(message)
+              else if (type === "warning") ToastUtils.warning(message)
+              else if (type === "info") ToastUtils.info(message)
+              else ToastUtils.success(message)
+            }}
           />
         )}
 
@@ -406,7 +385,6 @@ export default function WhatsAppLinkGenerator() {
           }}
           onContactDelete={handleDeleteContact}
           onClearAll={clearAll}
-          currentPage={state.currentPage}
           itemsPerPage={state.itemsPerPage}
           onPageChange={(page) => updateState({ currentPage: page })}
           onItemsPerPageChange={(itemsPerPage) => updateState({ itemsPerPage, currentPage: 1 })}

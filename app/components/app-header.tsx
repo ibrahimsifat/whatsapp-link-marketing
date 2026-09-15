@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Building, Cloud, LogOut, MessageCircle, RefreshCw } from "lucide-react"
+import { Building, Cloud, LogOut, RefreshCw } from "lucide-react"
 
 interface AppHeaderProps {
   totalContacts: number
@@ -42,15 +42,6 @@ export function AppHeader({
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <Button
-          onClick={() => window.open("/documentation", "_blank")}
-          variant="outline"
-          className="h-9 w-full border-slate-200 bg-white text-slate-700 sm:w-auto"
-        >
-          <MessageCircle className="mr-2 h-4 w-4" />
-          Documentation
-        </Button>
-
         <Button
           onClick={onLoadSavedContacts}
           variant="outline"

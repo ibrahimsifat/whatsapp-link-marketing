@@ -91,7 +91,6 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
     // Try each CSV URL until one works
     for (let i = 0; i < csvUrls.length; i++) {
       const csvUrl = csvUrls[i]
-      console.log(`Trying CSV URL ${i + 1}/${csvUrls.length}:`, csvUrl)
 
       try {
         const response = await fetch(csvUrl)
@@ -100,19 +99,15 @@ export function GoogleSheetsImport({ onImportContacts, onShowToast }: GoogleShee
           const csvText = await response.text()
 
           if (csvText.trim() && !csvText.includes("<!DOCTYPE html")) {
-            console.log(`Successfully fetched data from URL ${i + 1}`)
             return processCsvData(csvText)
           } else {
             throw new Error("Received HTML instead of CSV data")
           }
         } else {
-          const errorMessage = `HTTP ${response.status}: ${response.statusText}`
-          console.log(`URL ${i + 1} failed:`, errorMessage)
-          lastError = new Error(errorMessage)
+          lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
           continue
         }
       } catch (error) {
-        console.log(`URL ${i + 1} failed:`, error)
         lastError = error as Error
         continue
       }

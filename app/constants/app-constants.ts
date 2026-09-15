@@ -311,26 +311,3 @@ export const SUCCESS_MESSAGES = {
   },
 } as const
 
-// ============================================================================
-// FEATURE FLAGS
-// ============================================================================
-
-export const FEATURE_FLAGS = {
-  /** Enable Google Sheets integration */
-  GOOGLE_SHEETS_ENABLED: true,
-
-  /** Enable advanced search */
-  ADVANCED_SEARCH_ENABLED: true,
-
-  /** Enable bulk operations */
-  BULK_OPERATIONS_ENABLED: true,
-
-  /** Enable contact analytics */
-  ANALYTICS_ENABLED: true,
-
-  /** Enable template sharing */
-  TEMPLATE_SHARING_ENABLED: false,
-
-  /** Enable dark mode */
-  DARK_MODE_ENABLED: false,
-} as const

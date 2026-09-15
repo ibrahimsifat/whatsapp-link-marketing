@@ -31,7 +31,6 @@ interface ContactsOverviewSectionProps {
   onContactUpdate: (updatedContact: Contact) => void
   onContactDelete: (contactId: string) => void
   onClearAll: () => void
-  currentPage: number
   itemsPerPage: number
   onPageChange: (page: number) => void
   onItemsPerPageChange: (itemsPerPage: number) => void
@@ -48,7 +47,6 @@ export function ContactsOverviewSection({
   onContactUpdate,
   onContactDelete,
   onClearAll,
-  currentPage,
   itemsPerPage,
   onPageChange,
   onItemsPerPageChange,

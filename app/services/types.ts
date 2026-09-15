@@ -158,25 +158,6 @@ export interface BatchOperationResult {
   duration: number
 }
 
-// ============================================================================
-// STORAGE SERVICE TYPES
-// ============================================================================
-
-export interface StorageServiceConfig {
-  keyPrefix: string
-  compression: boolean
-  encryption: boolean
-  maxSize: number
-}
-
-export interface StorageResult<T = any> extends ServiceResult {
-  data?: T
-  storageInfo?: {
-    key: string
-    size: number
-    lastModified: string
-  }
-}
 
 // ============================================================================
 // VALIDATION SERVICE TYPES
