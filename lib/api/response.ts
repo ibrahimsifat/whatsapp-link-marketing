@@ -15,6 +15,7 @@ import { ZodError } from "zod"
 
 import { D1Error, UniqueConstraintError } from "@/lib/db/d1-http"
 import { ConfigurationError } from "@/lib/env"
+import { R2ConfigurationError, R2Error } from "@/lib/r2"
 
 export interface ApiEnvelope<T> {
   success: boolean
@@ -98,6 +99,15 @@ export function toErrorResponse(error: unknown): NextResponse<ApiEnvelope<never>
     // 503 rather than 500: the request itself was fine, the datastore was not,
     // and the caller can sensibly retry.
     return fail("The database is temporarily unavailable. Please try again.", 503)
+  }
+
+  if (error instanceof R2ConfigurationError) {
+    return fail(error.message, 503)
+  }
+
+  if (error instanceof R2Error) {
+    console.error("[api] R2 upload error:", { message: error.message, status: error.status })
+    return fail("The image upload failed. Please try again.", 502)
   }
 
   console.error("[api] Unhandled error:", error)

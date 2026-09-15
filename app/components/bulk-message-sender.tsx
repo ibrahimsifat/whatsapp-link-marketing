@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,10 +26,12 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock,
   MessageCircle,
   SkipForward,
   Send,
@@ -74,6 +76,8 @@ interface QueueItem {
   usedFallback?: boolean
 }
 
+const AUTO_ADVANCE_SECONDS_OPTIONS = [15, 30, 40, 60, 90, 120]
+
 function resolveMessageForContact(
   contact: Contact,
   options: { usesLanguageRouting: boolean; selectedGroup: TemplateGroup | null; customMessage: string },
@@ -102,6 +106,15 @@ export function BulkMessageSender({
   const [sentCount, setSentCount] = useState(0)
   const [skippedCount, setSkippedCount] = useState(0)
   const [popupBlocked, setPopupBlocked] = useState(false)
+  const [autoAdvance, setAutoAdvance] = useState(false)
+  const [autoAdvanceSeconds, setAutoAdvanceSeconds] = useState(30)
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null)
+
+  // The time the next auto-send is due. Read from `visibilitychange` so a
+  // timer that could not fire while this tab was hidden (WhatsApp open in the
+  // foreground on a phone) still fires the moment the operator comes back.
+  const autoSendAtRef = useRef<number | null>(null)
+  const sendInFlightRef = useRef(false)
 
   // The preference lives in localStorage, which is outside React. Subscribing
   // to it keeps the select in step without a state-setting effect, and yields
@@ -151,6 +164,9 @@ export function BulkMessageSender({
     setSentCount(0)
     setSkippedCount(0)
     setPopupBlocked(false)
+    setAutoCountdown(null)
+    autoSendAtRef.current = null
+    sendInFlightRef.current = false
   }
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -171,38 +187,50 @@ export function BulkMessageSender({
     setPopupBlocked(false)
   }
 
-  const advance = () => setQueueIndex((index) => index + 1)
+  const advance = () => {
+    autoSendAtRef.current = null
+    setAutoCountdown(null)
+    setQueueIndex((index) => index + 1)
+  }
 
   const handleSendCurrent = async () => {
-    if (!current) return
-
-    if (!current.message.trim()) {
-      onShowToast("This contact has no message to send - skipping", "warning")
-      setSkippedCount((count) => count + 1)
-      advance()
-      return
-    }
-
-    if (current.message.length > WHATSAPP_CONSTANTS.MAX_MESSAGE_LENGTH) {
-      onShowToast(`Message too long for ${current.contact.companyName || current.contact.normalized} - skipping`, "warning")
-      setSkippedCount((count) => count + 1)
-      advance()
-      return
-    }
+    if (!current || sendInFlightRef.current) return
+    sendInFlightRef.current = true
 
     try {
-      const link = WhatsAppService.generateWhatsAppLink(current.contact.normalized, current.message)
-      WhatsAppService.openChat(link)
-      setPopupBlocked(false)
-    } catch {
-      // Pop-up blocked: stay on this contact so the user can allow pop-ups and retry.
-      setPopupBlocked(true)
-      return
-    }
+      if (!current.message.trim()) {
+        onShowToast("This contact has no message to send - skipping", "warning")
+        setSkippedCount((count) => count + 1)
+        advance()
+        return
+      }
 
-    await onContactStatusUpdate(current.contact.id, "sent")
-    setSentCount((count) => count + 1)
-    advance()
+      if (current.message.length > WHATSAPP_CONSTANTS.MAX_MESSAGE_LENGTH) {
+        onShowToast(`Message too long for ${current.contact.companyName || current.contact.normalized} - skipping`, "warning")
+        setSkippedCount((count) => count + 1)
+        advance()
+        return
+      }
+
+      try {
+        const link = WhatsAppService.generateWhatsAppLink(current.contact.normalized, current.message)
+        WhatsAppService.openChat(link)
+        setPopupBlocked(false)
+      } catch {
+        // Pop-up blocked: stay on this contact, turn auto-advance off (further
+        // automatic attempts would just be blocked too), and let the operator
+        // allow pop-ups and tap Send themselves.
+        setPopupBlocked(true)
+        setAutoAdvance(false)
+        return
+      }
+
+      await onContactStatusUpdate(current.contact.id, "sent")
+      setSentCount((count) => count + 1)
+      advance()
+    } finally {
+      sendInFlightRef.current = false
+    }
   }
 
   const handleSkipCurrent = () => {
@@ -210,6 +238,45 @@ export function BulkMessageSender({
     setPopupBlocked(false)
     advance()
   }
+
+  // Auto-advance: counts down after each contact and sends the next one
+  // automatically. WhatsApp opening as its own app backgrounds this tab, and
+  // phones throttle timers in a backgrounded tab - so alongside the plain
+  // timeout, `visibilitychange` catches the operator coming back and fires
+  // immediately if the time is already up, instead of leaving them waiting on
+  // a timer that never got to run.
+  useEffect(() => {
+    if (!isSending || isDone || !autoAdvance || popupBlocked || !current) return
+
+    const dueAt = Date.now() + autoAdvanceSeconds * 1000
+    autoSendAtRef.current = dueAt
+
+    const timeout = setTimeout(() => {
+      void handleSendCurrent()
+    }, autoAdvanceSeconds * 1000)
+
+    const tick = setInterval(() => {
+      setAutoCountdown(Math.max(0, Math.ceil((dueAt - Date.now()) / 1000)))
+    }, 250)
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && autoSendAtRef.current && Date.now() >= autoSendAtRef.current) {
+        clearTimeout(timeout)
+        void handleSendCurrent()
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      clearTimeout(timeout)
+      clearInterval(tick)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+    // handleSendCurrent is recreated every render, but it always reads the
+    // latest `current`/`queueIndex` - re-running this effect on those two is
+    // what matters, not the function identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queueIndex, isSending, isDone, autoAdvance, autoAdvanceSeconds, popupBlocked])
 
   const handleFinish = () => {
     onShowToast(`Bulk send finished: ${sentCount} sent, ${skippedCount} skipped`, "success")
@@ -277,8 +344,8 @@ export function BulkMessageSender({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] max-h-[92dvh] overflow-hidden p-0">
-        <DialogHeader className="border-b px-4 py-4 sm:px-6">
+      <DialogContent className="flex max-w-2xl w-[calc(100vw-1rem)] max-h-[92dvh] flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b px-4 py-4 sm:px-6">
           <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50">
               <MessageCircle className="h-5 w-5 text-emerald-600" />
@@ -287,12 +354,14 @@ export function BulkMessageSender({
           </DialogTitle>
           <DialogDescription className="text-sm">
             {isSending
-              ? "Tap Send to open each chat in WhatsApp, one contact at a time."
+              ? autoAdvance
+                ? "Chats open automatically - tap Send Now or Skip anytime to move faster."
+                : "Tap Send to open each chat in WhatsApp, one contact at a time."
               : "Review the message, then go through your contacts one tap at a time."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[calc(92dvh-158px)] overflow-y-auto px-4 py-4 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
           {!isSending ? (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -343,14 +412,14 @@ export function BulkMessageSender({
                   >
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Settings className="h-4 w-4 text-emerald-600" />
-                      Where chats open
+                      Sending options
                     </CardTitle>
                     <span className="text-sm text-emerald-700">{showLinkSettings ? "Hide" : "Edit"}</span>
                   </button>
                 </CardHeader>
 
                 {showLinkSettings && (
-                  <CardContent>
+                  <CardContent className="space-y-3">
                     <div className="space-y-1.5 rounded-lg border border-slate-200 bg-white p-3">
                       <Label htmlFor="link-target" className="text-sm font-medium">
                         Open chats in
@@ -370,6 +439,43 @@ export function BulkMessageSender({
                       <p className="text-xs text-slate-500">
                         Saved for this device only, so your phone can open the WhatsApp app while your desktop keeps
                         using WhatsApp Web.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label htmlFor="auto-advance" className="text-sm font-medium">
+                          Auto-advance to the next contact
+                        </Label>
+                        <Switch id="auto-advance" checked={autoAdvance} onCheckedChange={setAutoAdvance} />
+                      </div>
+
+                      {autoAdvance && (
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="auto-advance-seconds" className="text-xs text-slate-500">
+                            Wait
+                          </Label>
+                          <select
+                            id="auto-advance-seconds"
+                            value={autoAdvanceSeconds}
+                            onChange={(event) => setAutoAdvanceSeconds(Number(event.target.value))}
+                            className="h-9 rounded-md border bg-white px-2 text-sm"
+                          >
+                            {AUTO_ADVANCE_SECONDS_OPTIONS.map((seconds) => (
+                              <option key={seconds} value={seconds}>
+                                {seconds} seconds
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-xs text-slate-500">between each contact</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500">
+                        When on, each chat opens automatically after the wait instead of waiting for you to tap Send.
+                        Works best while this tab stays open. If WhatsApp opens as its own app on your phone, the next
+                        chat opens the moment you switch back - but your browser may still block it, in which case
+                        auto-advance turns off and you just tap Send.
                       </p>
                     </div>
                   </CardContent>
@@ -425,15 +531,30 @@ export function BulkMessageSender({
                 <Alert className="border-amber-200 bg-amber-50">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
                   <AlertDescription className="text-sm text-amber-800">
-                    Your browser blocked the WhatsApp pop-up. Allow pop-ups for this site, then tap Send again.
+                    Your browser blocked the WhatsApp pop-up, so auto-advance has been turned off. Allow pop-ups for
+                    this site, then tap Send again.
                   </AlertDescription>
                 </Alert>
+              )}
+
+              {autoAdvance && !popupBlocked && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                  <span className="flex items-center gap-2 text-sm text-emerald-800">
+                    <Clock className="h-4 w-4" />
+                    {autoCountdown !== null && autoCountdown > 0
+                      ? `Sending automatically in ${autoCountdown}s`
+                      : "Sending now..."}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => setAutoAdvance(false)} className="h-7 text-xs text-emerald-700">
+                    Pause auto
+                  </Button>
+                </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           {!isSending && (
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
               Close
@@ -452,7 +573,7 @@ export function BulkMessageSender({
               </Button>
               <Button onClick={handleSendCurrent} className="w-full bg-emerald-600 py-6 text-base text-white hover:bg-emerald-700 sm:w-auto sm:py-2 sm:text-sm">
                 <Send className="h-4 w-4 mr-2" />
-                Send &amp; Next
+                {autoAdvance ? "Send Now" : "Send & Next"}
               </Button>
             </div>
           ) : (

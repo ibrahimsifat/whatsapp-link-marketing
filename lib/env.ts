@@ -40,6 +40,12 @@ const serverEnvSchema = z.object({
   CLOUDFLARE_D1_DATABASE_ID: requiredString("CLOUDFLARE_D1_DATABASE_ID is required"),
   CLOUDFLARE_API_TOKEN: requiredString("CLOUDFLARE_API_TOKEN is required"),
 
+  // --- Cloudflare R2 (template image uploads) -------------------------------
+  // Optional: image upload is disabled with a clear error until both are set.
+  CLOUDFLARE_R2_BUCKET_NAME: optionalString(z.string().min(1)),
+  /** Public base URL the bucket serves objects from (an r2.dev subdomain or a custom domain), no trailing slash. */
+  CLOUDFLARE_R2_PUBLIC_BASE_URL: optionalString(z.string().url()),
+
   // --- Auth ----------------------------------------------------------------
   AUTH_EMAIL: z.string().email("AUTH_EMAIL must be a valid email address"),
   /** Plain password. Used only when AUTH_PASSWORD_HASH is not provided. */

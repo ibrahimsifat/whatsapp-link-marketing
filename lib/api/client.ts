@@ -104,6 +104,9 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<ApiEnvelope<T>> {
   const { body, timeoutMs = DEFAULT_TIMEOUT_MS, skipAuthRedirect, headers, ...rest } = options
   const method = (rest.method ?? "GET").toUpperCase()
+  // FormData sets its own multipart boundary in the Content-Type header, so it
+  // must be left for the browser to add and never JSON-encoded.
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData
 
   let lastError: ApiError | null = null
 
@@ -120,10 +123,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
         ...rest,
         method,
         headers: {
-          ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+          ...(body !== undefined && !isFormData ? { "Content-Type": "application/json" } : {}),
           ...headers,
         },
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
         // Send the session cookie, and never serve a stale cached response.
         credentials: "same-origin",
         cache: "no-store",
@@ -301,6 +304,19 @@ export const templatesApi = {
       `/api/templates/${encodeURIComponent(id)}?group=1`,
       { method: "DELETE" },
     ),
+}
+
+// ============================================================================
+// UPLOADS
+// ============================================================================
+
+export const uploadsApi = {
+  /** Uploads an image for use in a template and returns its public URL. */
+  image: (file: File) => {
+    const form = new FormData()
+    form.set("file", file)
+    return data<{ url: string }>("/api/uploads", { method: "POST", body: form, timeoutMs: 60_000 })
+  },
 }
 
 // ============================================================================

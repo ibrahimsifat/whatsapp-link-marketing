@@ -64,6 +64,21 @@ export const WHATSAPP_CONSTANTS = {
 } as const
 
 // ============================================================================
+// IMAGE UPLOAD SETTINGS
+// ============================================================================
+
+export const IMAGE_UPLOAD_CONSTANTS = {
+  /**
+   * Max upload size (2MB). Kept well under WhatsApp's own media limits: a
+   * smaller file previews faster and more reliably in the recipient's chat.
+   */
+  MAX_SIZE: 2 * 1024 * 1024,
+
+  /** Formats every WhatsApp client can unfurl into a preview. */
+  ALLOWED_TYPES: ["image/jpeg", "image/png", "image/webp", "image/gif"] as const,
+} as const
+
+// ============================================================================
 // VALIDATION RULES
 // ============================================================================
 

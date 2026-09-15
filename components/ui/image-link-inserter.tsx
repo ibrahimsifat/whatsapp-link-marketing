@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Image as ImageIcon, Check, X } from "lucide-react"
+import { useRef, useState } from "react"
+import { Image as ImageIcon, Check, Loader2, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { uploadsApi } from "@/lib/api/client"
+import { IMAGE_UPLOAD_CONSTANTS } from "@/app/constants/app-constants"
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -27,7 +29,7 @@ export function ImageLinkButton({ isOpen, onClick, className }: ImageLinkButtonP
       variant={isOpen ? "default" : "ghost"}
       size="sm"
       onClick={onClick}
-      title="Insert image link"
+      title="Add an image"
       className={className ?? "h-9 w-9 p-0"}
     >
       <ImageIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -44,8 +46,10 @@ export function ImageLinkPanel({ onInsert, onClose }: ImageLinkPanelProps) {
   const [url, setUrl] = useState("")
   const [error, setError] = useState("")
   const [previewFailed, setPreviewFailed] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleInsert = () => {
+  const handleInsertUrl = () => {
     const trimmed = url.trim()
     if (!isHttpUrl(trimmed)) {
       setError("Enter a valid image URL starting with http:// or https://")
@@ -55,8 +59,69 @@ export function ImageLinkPanel({ onInsert, onClose }: ImageLinkPanelProps) {
     onClose()
   }
 
+  const handleFileSelected = async (file: File | undefined) => {
+    if (!file) return
+    setError("")
+
+    if (!(IMAGE_UPLOAD_CONSTANTS.ALLOWED_TYPES as readonly string[]).includes(file.type)) {
+      setError("Unsupported file type. Use JPEG, PNG, WebP, or GIF.")
+      return
+    }
+
+    if (file.size > IMAGE_UPLOAD_CONSTANTS.MAX_SIZE) {
+      setError(`Image is too large. Maximum size is ${IMAGE_UPLOAD_CONSTANTS.MAX_SIZE / (1024 * 1024)}MB.`)
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const result = await uploadsApi.image(file)
+      onInsert(result.url)
+      onClose()
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Upload failed")
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
   return (
-    <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+    <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={IMAGE_UPLOAD_CONSTANTS.ALLOWED_TYPES.join(",")}
+          className="hidden"
+          onChange={(e) => handleFileSelected(e.target.files?.[0])}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={isUploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="h-9 flex-1 border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100"
+        >
+          {isUploading ? (
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Upload className="mr-2 h-3.5 w-3.5" />
+          )}
+          {isUploading ? "Uploading..." : "Upload an image"}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="h-9 w-9 shrink-0 p-0">
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-emerald-700/70">
+        <div className="h-px flex-1 bg-emerald-200" />
+        or paste a link
+        <div className="h-px flex-1 bg-emerald-200" />
+      </div>
+
       <div className="flex items-center gap-2">
         <Input
           value={url}
@@ -68,18 +133,14 @@ export function ImageLinkPanel({ onInsert, onClose }: ImageLinkPanelProps) {
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault()
-              handleInsert()
+              handleInsertUrl()
             }
           }}
           placeholder="https://example.com/photo.jpg"
           className="h-9 flex-1 bg-white text-sm"
-          autoFocus
         />
-        <Button type="button" size="sm" onClick={handleInsert} className="h-9 w-9 shrink-0 bg-emerald-600 p-0 hover:bg-emerald-700">
+        <Button type="button" size="sm" onClick={handleInsertUrl} className="h-9 w-9 shrink-0 bg-emerald-600 p-0 hover:bg-emerald-700">
           <Check className="h-3.5 w-3.5" />
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="h-9 w-9 shrink-0 p-0">
-          <X className="h-3.5 w-3.5" />
         </Button>
       </div>
 
@@ -96,13 +157,13 @@ export function ImageLinkPanel({ onInsert, onClose }: ImageLinkPanelProps) {
             onLoad={() => setPreviewFailed(false)}
           />
           {previewFailed && (
-            <p className="text-xs text-amber-700">Couldn't load a preview — it will still be inserted as a link.</p>
+            <p className="text-xs text-amber-700">Couldn&apos;t load a preview — it will still be inserted as a link.</p>
           )}
         </div>
       )}
 
       <p className="text-xs text-emerald-700">
-        WhatsApp links can't attach a file directly, so this adds the image URL to your message. Most WhatsApp clients
+        WhatsApp links can&apos;t attach a file directly, so this adds an image URL to your message. Most WhatsApp clients
         show a preview thumbnail for it automatically.
       </p>
     </div>
